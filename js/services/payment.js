@@ -224,9 +224,82 @@ class PaymentService {
   }
 
   /**
-   * Kích hoạt tức thì (Siêu tốc 1 giây sau khi chuyển tiền)
+   * Xác minh giao dịch thanh toán thực tế trước khi kích hoạt tài khoản
+   * TUYỆT ĐỐI KHÔNG kích hoạt nếu chưa nhận được giao dịch 20.000đ từ ngân hàng!
    */
-  async instantActivate(orderCode) {
+  async verifyAndActivate(orderCode) {
+    if (!orderCode) {
+      return { success: false, error: 'Mã đơn hàng không hợp lệ!' };
+    }
+
+    // 1. Kiểm tra trạng thái đơn hàng trên Firestore
+    const check = await this.checkOrderStatus(orderCode);
+    if (check.status === 'PAID') {
+      let order = this.currentOrder;
+      if (!order || order.orderId !== orderCode) {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.PENDING_ORDER);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed.orderId === orderCode) {
+              order = parsed;
+            }
+          }
+        } catch (e) {}
+      }
+      if (!order && check.order) {
+        order = check.order;
+      }
+      if (order) {
+        return await this.confirmPaymentAndActivateAccount(order);
+      }
+    }
+
+    // 2. Nếu có cấu hình sepayApiKey, tra soát trực tiếp qua SePay API
+    if (this.config.sepayApiKey) {
+      try {
+        const resp = await fetch('https://my.sepay.vn/userapi/transactions/list?limit=20', {
+          headers: {
+            'Authorization': `Bearer ${this.config.sepayApiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          const txs = data.transactions || data.messages || [];
+          const found = txs.find(tx => {
+            const content = String(tx.transaction_content || tx.description || tx.content || '');
+            const amountIn = Number(tx.amount_in || tx.amount || 0);
+            return content.toUpperCase().includes(orderCode.toUpperCase()) && amountIn >= 20000;
+          });
+
+          if (found) {
+            let order = this.currentOrder;
+            if (!order) {
+              const saved = localStorage.getItem(STORAGE_KEYS.PENDING_ORDER);
+              if (saved) order = JSON.parse(saved);
+            }
+            if (order) {
+              return await this.confirmPaymentAndActivateAccount(order);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Lỗi kiểm tra SePay API:', err);
+      }
+    }
+
+    // Nếu chưa nhận được tiền: Từ chối kích hoạt 100%!
+    return {
+      success: false,
+      error: `Hệ thống chưa tìm thấy giao dịch chuyển tiền 20.000đ cho mã đơn ${orderCode} trên tài khoản Techcombank ${this.config.accountNo}. Nếu bạn vừa chuyển tiền, vui lòng chờ 5-10 giây để ngân hàng gửi tín hiệu rồi bấm kiểm tra lại nhé!`
+    };
+  }
+
+  /**
+   * Mô phỏng xác nhận thanh toán thành công (dành cho Admin khi kiểm tra test qua console)
+   */
+  async simulatePaymentSuccess(orderCode) {
     let order = this.currentOrder;
     if (!order || (orderCode && order.orderId !== orderCode)) {
       try {
@@ -239,18 +312,10 @@ class PaymentService {
         }
       } catch (e) {}
     }
-
     if (order) {
       return await this.confirmPaymentAndActivateAccount(order);
     }
     return { success: false, error: 'Không tìm thấy đơn hàng tương ứng.' };
-  }
-
-  /**
-   * Mô phỏng xác nhận thanh toán thành công (dành cho Admin / Test)
-   */
-  async simulatePaymentSuccess(orderCode) {
-    return await this.instantActivate(orderCode);
   }
 }
 

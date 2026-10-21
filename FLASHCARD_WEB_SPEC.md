@@ -418,6 +418,13 @@ Trong quá trình rà soát và kiểm thử tự động, đã phát hiện và
 8. **Dọn dẹp và reset toàn bộ tài khoản database theo yêu cầu người dùng**:
    - Đã thực thi script dọn dẹp qua Firebase REST API: Xóa sạch toàn bộ collections `users`, `users_lookup`, và `payment_orders` trên Cloud Firestore project `haisonflashcard`.
    - Kết quả: Toàn bộ 0 documents còn lại, web trở về trạng thái sạch sẽ tuyệt đối, sẵn sàng tiếp nhận tài khoản chính thức mới.
+9. **Hiện tượng chưa chuyển tiền nhưng bấm xác nhận vẫn được kích hoạt và cho vào học**:
+   - *Triệu chứng*: Người dùng chưa chuyển tiền trên ngân hàng nhưng khi bấm xác nhận, hệ thống vẫn báo thành công và cho phép vào học ngay.
+   - *Nguyên nhân cốt lõi*: Nút bấm cũ gọi phương thức `instantActivate`, phương thức này vốn được thiết kế để bypass mô phỏng trong quá trình dev ban đầu, không xác minh trạng thái giao dịch ngân hàng thực tế mà tự động đánh dấu đơn `PAID` và tạo user.
+   - *Biện pháp khắc phục triệt để*:
+     + Xóa bỏ hoàn toàn phương thức `instantActivate` bypass tự do khỏi giao diện người dùng.
+     + Thay thế bằng phương thức bảo mật `verifyAndActivate`: BẮT BUỘC kiểm tra trạng thái giao dịch thực tế trên Cloud Firestore (`status === 'PAID'` do Webhook ngân hàng/SePay gửi về) hoặc tra soát trực tiếp SePay API.
+     + NẾU CHƯA NHẬN ĐƯỢC TIỀN: Hệ thống từ chối kích hoạt 100%, hiển thị Banner thông báo cảnh báo đỏ/vàng kèm âm thanh cảnh báo, yêu cầu người dùng chuyển tiền đúng STK và nội dung mã đơn rồi mới thử lại. Paywall vẫn tiếp tục khóa chặt.
 
 ---
 
@@ -440,6 +447,7 @@ Trong quá trình rà soát và kiểm thử tự động, đã phát hiện và
 | **TC-33** | Đồng Bộ Đa Thiết Bị Tuyệt Đối | Tài khoản tạo trên máy này tự động lưu lên `users` và `users_lookup`, mở máy khác/điện thoại đăng nhập thành công 100% ngay tức thì | Đồng bộ 2 chiều Firestore hoàn hảo | **100% ĐẠT** |
 | **TC-34** | In-Modal Visual Status Feedback Banner | Khi bấm xác nhận chuyển tiền, thông báo Thành công / Thất bại / Đang xử lý hiển thị trực tiếp to rõ trong Modal, tuyệt đối không dùng popup `alert()` bị trình duyệt chặn | Banner 4 màu trực quan, hiệu ứng rung, âm thanh chuẩn | **100% ĐẠT** |
 | **TC-35** | Reset Sạch Sẽ Toàn Bộ Database Firestore | Thực thi dọn dẹp toàn bộ dữ liệu collections `users`, `users_lookup`, `payment_orders` | Toàn bộ 0 documents còn lại, an toàn tuyệt đối | **100% ĐẠT** |
+| **TC-36** | Chống Kích Hoạt Khi Chưa Có Tiền Thật | Người dùng chưa chuyển tiền bấm nút xác nhận sẽ bị từ chối 100%, modal hiển thị lỗi đỏ, không mở khóa tài khoản | Từ chối kích hoạt, giữ nguyên Paywall an toàn | **100% ĐẠT** |
 
 ---
 
