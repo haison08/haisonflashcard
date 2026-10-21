@@ -377,6 +377,10 @@ class AuthModal {
               <button class="btn btn-primary" id="btn-instant-verify" style="width: 100%; padding: 0.85rem 1rem; font-size: 1rem; font-weight: 700; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                 <span>⚡</span> Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)
               </button>
+
+              <!-- In-Modal Visual Status Feedback Banner (Báo rõ ràng Thành công / Thất bại) -->
+              <div id="payment-feedback-banner" class="payment-feedback-banner" style="display: none;"></div>
+
               <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; text-align: center;">
                 💡 Sau khi chuyển tiền trên app Techcombank (hoặc quét QR), hãy bấm nút xanh phía trên để tài khoản kích hoạt ngay lập tức!
               </div>
@@ -412,6 +416,29 @@ class AuthModal {
       this.open('register');
     });
 
+    // Helper hiển thị thông báo trạng thái trực quan trong modal (không dùng alert)
+    const showFeedback = (type, message) => {
+      const banner = document.getElementById('payment-feedback-banner');
+      if (!banner) return;
+
+      banner.style.display = 'flex';
+      banner.className = `payment-feedback-banner feedback-${type}`;
+
+      let icon = 'ℹ️';
+      if (type === 'processing') icon = '⏳';
+      if (type === 'success') icon = '✅';
+      if (type === 'error') {
+        icon = '❌';
+        audio.playWrong();
+      }
+      if (type === 'warning') icon = '⚠️';
+
+      banner.innerHTML = `
+        <div style="font-size: 1.2rem; line-height: 1;">${icon}</div>
+        <div style="flex: 1;">${message}</div>
+      `;
+    };
+
     // Xử lý nút Copy nhanh
     container.querySelectorAll('.copy-badge').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -441,6 +468,7 @@ class AuthModal {
         if (timerValEl) timerValEl.textContent = '00:00 (Hết hạn)';
         const statusText = document.getElementById('payment-status-text');
         if (statusText) statusText.textContent = 'Đơn hàng đã hết hạn. Vui lòng tạo đơn mới.';
+        showFeedback('error', 'Đơn hàng đã quá hạn 10 phút. Bạn vui lòng quay lại tạo đơn mới nhé!');
       } else {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
@@ -481,7 +509,6 @@ class AuthModal {
       }
     };
 
-    // Kiểm tra thủ công khi người dùng bấm nút
     // Kiểm tra tín hiệu Webhook tự động
     document.getElementById('btn-manual-check-payment')?.addEventListener('click', async () => {
       const btn = document.getElementById('btn-manual-check-payment');
@@ -490,19 +517,24 @@ class AuthModal {
         btn.textContent = 'Đang kiểm tra từ máy chủ...';
       }
 
+      showFeedback('processing', 'Đang kết nối kiểm tra tín hiệu Webhook tự động từ ngân hàng...');
+
       try {
         const check = await payment.checkOrderStatus(order.orderId);
         if (check.status === 'PAID') {
+          showFeedback('success', 'Đã nhận được biến động số dư 20.000đ! Đang kích hoạt tài khoản...');
           const activateRes = await payment.confirmPaymentAndActivateAccount(order);
           if (activateRes.success) {
-            handleSuccess(activateRes);
+            setTimeout(() => {
+              handleSuccess(activateRes);
+            }, 600);
             return;
           }
         }
-        audio.playClick();
-        alert('Hệ thống chưa nhận được webhook tự động. Bạn hãy bấm nút màu xanh "⚡ Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)" ở trên để kích hoạt ngay nhé!');
+        showFeedback('warning', 'Hệ thống chưa nhận được tín hiệu Webhook tự động từ ngân hàng. Nếu bạn đã chuyển tiền trên App Techcombank rồi, hãy bấm nút màu xanh "⚡ Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)" ở trên để kích hoạt ngay nhé!');
       } catch (err) {
         console.error('Lỗi kiểm tra:', err);
+        showFeedback('error', 'Lỗi kiểm tra: ' + err.message);
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -519,17 +551,22 @@ class AuthModal {
         btn.innerHTML = '<span>⏳</span> Đang kích hoạt tài khoản...';
       }
 
+      showFeedback('processing', 'Đang xác minh giao dịch 20.000đ và kích hoạt tài khoản cho bạn...');
+
       try {
         const res = await payment.instantActivate(order.orderId);
         if (res.success) {
-          handleSuccess(res);
+          showFeedback('success', 'Xác nhận nạp tiền thành công! Đang mở khóa học tập...');
+          setTimeout(() => {
+            handleSuccess(res);
+          }, 600);
           return;
         } else {
-          alert('Lỗi kích hoạt: ' + res.error);
+          showFeedback('error', `Chưa thể kích hoạt: ${res.error}. Vui lòng thử lại sau giây lát!`);
         }
       } catch (err) {
         console.error('Lỗi khi bấm kích hoạt:', err);
-        alert('Có lỗi xảy ra: ' + err.message);
+        showFeedback('error', `Có lỗi xảy ra: ${err.message}. Vui lòng thử lại!`);
       } finally {
         if (btn) {
           btn.disabled = false;

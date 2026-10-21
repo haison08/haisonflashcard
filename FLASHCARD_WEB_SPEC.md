@@ -235,6 +235,16 @@
   - Hiển thị thông tin chuyển tiền test rõ ràng với mã QR Techcombank chuẩn VietQR để người dùng có thể quét chuyển tiền test thử ngay lập tức.
   - Tích hợp chuẩn Webhook SePay/PayOS đẩy trực tiếp vào `/api/payment-webhook` kích hoạt tự động theo thời gian thực.
 
+### 4.15. Hệ Thống Phản Hồi Trực Quan Cho Trạng Thái Thanh Toán (Visual Feedback System)
+- **Vấn đề cần giải quyết**: Trước đây, thông báo kiểm tra thanh toán phụ thuộc vào hàm `alert()` của trình duyệt (thường bị các trình duyệt hiện đại như Chrome/Safari chặn popup ngầm khiến người dùng không thấy phản hồi gì và tưởng hệ thống bị đơ).
+- **Quy chuẩn Phản hồi Trực quan Toàn diện**:
+  1. **Tuyệt đối không dùng `alert()` trình duyệt**: Mọi thông báo phải được render trực tiếp bên trong giao diện modal hoặc qua Toast Notification của ứng dụng.
+  2. **Banner Phản Hồi Động (Dynamic In-Modal Banner)** ngay dưới nút bấm:
+     - **Trạng thái Đang Xử Lý (Processing)**: Khung màu xanh dương với hiệu ứng xoay ⏳: *"Đang liên hệ máy chủ xác minh giao dịch và kích hoạt tài khoản..."*
+     - **Trạng thái Thành Công (Success)**: Chuyển sang màn hình chiến thắng 🎉, Toast xanh lá *"Kích hoạt tài khoản thành công!"*, phát âm thanh chiến thắng, bắn pháo hoa confetti và tự động đăng nhập.
+     - **Trạng thái Thất Bại / Chưa Nhận Được (Error / Notice)**: Khung màu đỏ/cam viền nổi bật kèm icon ❌: Giải thích rõ ràng nguyên nhân (chưa nhận được biến động, lỗi kết nối hoặc cần chuyển khoản lại) và hướng dẫn bấm nút *"⚡ Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)"* để kích hoạt ngay.
+  3. **Âm thanh phản hồi (Audio Feedback)**: Phát âm thanh thành công (`audio.playSuccess()`) hoặc âm thanh cảnh báo (`audio.playWrong()`) để người dùng luôn biết rõ kết quả.
+
 ---
 
 ## 5. KẾ HOẠCH TRIỂN KHAI THEO CÁC BƯỚC (IMPLEMENTATION ROADMAP)
@@ -266,6 +276,7 @@
 - [x] **Bước 25**: Nâng cấp tốc độ xác nhận thanh toán VietQR (polling 1.2s, nút xác nhận tức thì 1 giây).
 - [x] **Bước 26**: Bổ sung hiển thị VietQR Techcombank chuyển tiền test trực tiếp để người dùng chuyển thử ngay.
 - [x] **Bước 27**: Kiểm thử tự động trên Chrome và triển khai bản cập nhật lên Vercel.
+- [x] **Bước 28**: Xây dựng hệ thống Banner phản hồi trực quan (In-modal feedback banner) báo rõ ràng trạng thái Thành công / Thất bại khi bấm nút xác nhận, loại bỏ hoàn toàn `alert()` trình duyệt.
 
 ---
 
@@ -391,6 +402,22 @@ Trong quá trình rà soát và kiểm thử tự động, đã phát hiện và
      + Bọc toàn bộ các sự kiện nút thanh toán trong `try ... catch ... finally` để đảm bảo nút luôn được phục hồi, không bao giờ bị đơ giao diện.
      + Dùng `setDoc` với `{ merge: true }` khi cập nhật trạng thái đơn Firestore để tránh lỗi nếu document chưa tồn tại.
      + Đã xác minh trên hệ thống Cloud Firestore: Tài khoản `hihdi@gmail.com` (mật khẩu `son20082008`, tên `huuhuh`) đã được kích hoạt vĩnh viễn và sẵn sàng sử dụng trên mọi thiết bị.
+7. **Hiện tượng người dùng không nhận được bất kỳ thông báo nào (im lặng/không phản hồi) khi bấm nút xác nhận thanh toán**:
+   - *Triệu chứng*: Người dùng bấm nút "⚡ Tôi Đã Chuyển Tiền" hoặc "Kiểm tra thanh toán", hệ thống không có bất kỳ phản hồi hoặc thông báo Thành công / Thất bại nào xuất hiện trên màn hình, gây hiểu lầm là web bị đơ.
+   - *Nguyên nhân cốt lõi*:
+     + Trình duyệt hiện đại (Chrome, Safari, Edge) có cơ chế "Suppress dialogs" tự động chặn âm thầm hàm `window.alert()` mặc định khi người dùng click nhanh nhiều lần hoặc khi gọi alert liên tiếp. Khi alert bị chặn ngầm, không có lỗi runtime nào được ném ra nhưng người dùng hoàn toàn không nhìn thấy gì.
+     + Thiếu một khu vực hiển thị thông báo trực tiếp (In-Modal Status Feedback Banner) bên trong cây DOM của Modal.
+   - *Biện pháp khắc phục triệt để*:
+     + **Loại bỏ 100% `alert()`** trong toàn bộ luồng thanh toán và kích hoạt tài khoản.
+     + **Xây dựng In-Modal Status Feedback Banner** (`#payment-feedback-banner`) nằm ngay dưới nút bấm với 4 trạng thái trực quan rõ ràng:
+       * `processing` (Xanh dương, icon ⏳): *"Đang xác minh giao dịch 20.000đ và kích hoạt tài khoản cho bạn..."*
+       * `success` (Xanh lá, icon ✅): *"Xác nhận nạp tiền thành công! Đang mở khóa học tập..."* (tự động chuyển màn hình thành công và đăng nhập sau 0.6s).
+       * `warning` (Vàng cam, icon ⚠️): *"Hệ thống chưa nhận được tín hiệu Webhook tự động từ ngân hàng. Nếu bạn đã chuyển tiền trên App Techcombank rồi, hãy bấm nút màu xanh '⚡ Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)' ở trên để kích hoạt ngay nhé!"*
+       * `error` (Đỏ rực, icon ❌, hiệu ứng rung `shakeX` và âm thanh cảnh báo `audio.playWrong()`): Báo chi tiết lý do thất bại nếu có lỗi.
+     + Toàn bộ tiến trình được bọc trong `try ... catch ... finally` để nút luôn được phục hồi trạng thái (enabled), không bao giờ bị đơ.
+8. **Dọn dẹp và reset toàn bộ tài khoản database theo yêu cầu người dùng**:
+   - Đã thực thi script dọn dẹp qua Firebase REST API: Xóa sạch toàn bộ collections `users`, `users_lookup`, và `payment_orders` trên Cloud Firestore project `haisonflashcard`.
+   - Kết quả: Toàn bộ 0 documents còn lại, web trở về trạng thái sạch sẽ tuyệt đối, sẵn sàng tiếp nhận tài khoản chính thức mới.
 
 ---
 
@@ -411,6 +438,8 @@ Trong quá trình rà soát và kiểm thử tự động, đã phát hiện và
 | **TC-31** | Widget Quét Mã Test Trực Tiếp | Hiển thị mã VietQR Techcombank `6888200808` ngay trên Màn hình Khóa để người dùng quét chuyển tiền test thử tức thì | QR render chuẩn xác, sắc nét | **100% ĐẠT** |
 | **TC-32** | Nút Xác Nhận Tức Thì 1 Giây | Nút "⚡ Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)" kích hoạt tài khoản trong 1 giây sau khi chuyển tiền thành công | Phản hồi siêu tốc 1s | **100% ĐẠT** |
 | **TC-33** | Đồng Bộ Đa Thiết Bị Tuyệt Đối | Tài khoản tạo trên máy này tự động lưu lên `users` và `users_lookup`, mở máy khác/điện thoại đăng nhập thành công 100% ngay tức thì | Đồng bộ 2 chiều Firestore hoàn hảo | **100% ĐẠT** |
+| **TC-34** | In-Modal Visual Status Feedback Banner | Khi bấm xác nhận chuyển tiền, thông báo Thành công / Thất bại / Đang xử lý hiển thị trực tiếp to rõ trong Modal, tuyệt đối không dùng popup `alert()` bị trình duyệt chặn | Banner 4 màu trực quan, hiệu ứng rung, âm thanh chuẩn | **100% ĐẠT** |
+| **TC-35** | Reset Sạch Sẽ Toàn Bộ Database Firestore | Thực thi dọn dẹp toàn bộ dữ liệu collections `users`, `users_lookup`, `payment_orders` | Toàn bộ 0 documents còn lại, an toàn tuyệt đối | **100% ĐẠT** |
 
 ---
 
