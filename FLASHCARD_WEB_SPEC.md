@@ -245,6 +245,20 @@
      - **Trạng thái Thất Bại / Chưa Nhận Được (Error / Notice)**: Khung màu đỏ/cam viền nổi bật kèm icon ❌: Giải thích rõ ràng nguyên nhân (chưa nhận được biến động, lỗi kết nối hoặc cần chuyển khoản lại) và hướng dẫn bấm nút *"⚡ Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)"* để kích hoạt ngay.
   3. **Âm thanh phản hồi (Audio Feedback)**: Phát âm thanh thành công (`audio.playSuccess()`) hoặc âm thanh cảnh báo (`audio.playWrong()`) để người dùng luôn biết rõ kết quả.
 
+### 4.16. Kiến Trúc Cầu Nối Webhook Ngân Hàng Tự Động (Bank Automation Bridge - SePay)
+- **Bản chất kỹ thuật**:
+  - Tài khoản ngân hàng cá nhân (Techcombank `6888200808`) là một hệ thống nội bộ đóng. Khi có người chuyển tiền vào, ngân hàng chỉ gửi thông báo (Notification) về ứng dụng Techcombank trên điện thoại của chủ tài khoản, ngân hàng **không thể tự động biết website là gì** để gửi dữ liệu tới.
+  - Do đó, để website tự động nhận diện được tiền chuyển vào tài khoản cá nhân, bắt buộc cần một dịch vụ trung gian chuyên dụng đọc biến động số dư ngân hàng và bắn Webhook sang website.
+  - Cổng trung gian tiêu chuẩn, an toàn và có gói miễn phí tại Việt Nam: **SePay (sepay.vn)** (hoặc Casso / PayOS).
+- **Quy trình kết nối tự động 100% trong 2 phút**:
+  1. Đăng ký tài khoản miễn phí tại `https://sepay.vn`.
+  2. Liên kết tài khoản Techcombank `6888200808` vào SePay (cài app SePay trên điện thoại để tự động bắt thông báo biến động số dư Techcombank).
+  3. Cài đặt Webhook URL trên SePay trỏ về endpoint của ứng dụng:
+     `https://haisonflashcard.vercel.app/api/payment-webhook`
+     (Phương thức: `POST`, Dữ liệu: `JSON`).
+  4. Cơ chế luồng dữ liệu tự động:
+     Khách chuyển tiền VietQR với mã `LFxxxxx` -> App Techcombank nhận tiền -> SePay đọc biến động -> SePay POST Webhook tới `/api/payment-webhook` -> Vercel Endpoint cập nhật `payment_orders/LFxxxxx` thành `PAID` trên Firestore -> Trình duyệt khách hàng tự động nhận diện và mở khóa tài khoản ngay lập tức (1-3s).
+
 ---
 
 ## 5. KẾ HOẠCH TRIỂN KHAI THEO CÁC BƯỚC (IMPLEMENTATION ROADMAP)
