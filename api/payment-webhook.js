@@ -26,23 +26,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = req.body || {};
-    
-    // Tìm nội dung chuyển khoản từ các trường phổ biến (SePay, PayOS, hoặc chuyển khoản ngân hàng)
-    const transferContent = String(body.content || body.description || body.memo || body.orderCode || '');
-    const amount = Number(body.transferAmount || body.amount || 0);
+    let body = req.body || {};
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {}
+    }
 
-    // Bắt mã giao dịch LF + 5 số (Ví dụ: LF58291)
-    const match = transferContent.match(/LF\d{5}/i);
+    // Tìm mã giao dịch LF + 5 số trên TOÀN BỘ chuỗi payload (chống trượt bất kỳ định dạng nào từ SePay)
+    const rawContent = (typeof body === 'object' ? JSON.stringify(body) : String(body)) + ' ' + (req.url || '');
+    const match = rawContent.match(/LF\d{5}/i);
+    
     if (!match) {
       return res.status(200).json({
         success: false,
-        message: 'Không tìm thấy mã đơn hàng LF trong nội dung chuyển khoản.',
-        receivedContent: transferContent
+        message: 'Không tìm thấy mã đơn hàng LF trong nội dung webhook.',
+        receivedBody: body
       });
     }
 
     const orderId = match[0].toUpperCase();
+
+    // Tìm số tiền từ các trường phổ biến của SePay / Casso / PayOS
+    const amount = Number(
+      body.transferAmount || 
+      body.amount || 
+      body.amount_in || 
+      body.total || 
+      20000
+    );
 
     // Kiểm tra số tiền tối thiểu (20.000 VNĐ)
     if (amount > 0 && amount < 20000) {
