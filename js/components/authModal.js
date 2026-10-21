@@ -382,7 +382,7 @@ class AuthModal {
               <div id="payment-feedback-banner" class="payment-feedback-banner" style="display: none;"></div>
 
               <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; text-align: center;">
-                💡 Sau khi quét mã và chuyển tiền 20.000đ trên App Techcombank thành công, bạn bấm nút trên để hệ thống kiểm tra và mở khóa tài khoản ngay lập tức.
+                💡 Sau khi quét mã và chuyển tiền 20.000đ trên App ngân hàng (VietinBank / bất kỳ app nào) thành công, bạn bấm nút trên để hệ thống kiểm tra và mở khóa tài khoản ngay lập tức.
               </div>
 
               <button class="btn btn-ghost btn-sm" id="btn-back-to-edit" style="color: var(--text-muted); margin-top: 0.25rem;">
@@ -515,7 +515,7 @@ class AuthModal {
         btn.innerHTML = '<span>⏳</span> Đang kiểm tra giao dịch từ ngân hàng...';
       }
 
-      showFeedback('processing', `Đang kết nối kiểm tra giao dịch 20.000đ cho mã đơn ${order.orderId} trên tài khoản Techcombank...`);
+      showFeedback('processing', `Đang kết nối kiểm tra giao dịch 20.000đ cho mã đơn ${order.orderId} trên tài khoản VietinBank...`);
 
       try {
         const res = await payment.verifyAndActivate(order.orderId);
@@ -526,7 +526,7 @@ class AuthModal {
           }, 600);
           return;
         } else {
-          showFeedback('error', res.error || `Chưa tìm thấy giao dịch chuyển tiền 20.000đ cho mã đơn ${order.orderId}. Vui lòng chuyển tiền đúng nội dung trên App Techcombank rồi thử lại nhé!`);
+          showFeedback('error', res.error || `Chưa tìm thấy giao dịch chuyển tiền 20.000đ cho mã đơn ${order.orderId}. Vui lòng chuyển tiền đúng nội dung trên App ngân hàng rồi thử lại nhé!`);
         }
       } catch (err) {
         console.error('Lỗi khi kiểm tra giao dịch:', err);

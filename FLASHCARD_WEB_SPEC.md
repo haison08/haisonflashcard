@@ -200,9 +200,9 @@
   - Người dùng ở trạng thái Khách (Guest), thanh Header hiển thị nút **"🔐 Đăng nhập / Đăng ký"**.
   - Muốn tạo tài khoản để lưu trữ dữ liệu cá nhân hóa và đồng bộ đa thiết bị, người dùng bắt buộc phải qua bước nạp tiền 20.000đ.
 - **Thông tin Tài khoản Ngân hàng Thụ Hưởng Mặc Định**:
-  - **Ngân hàng**: Techcombank (Ngân hàng TMCP Kỹ Thương Việt Nam - Mã `TCB`)
-  - **Số tài khoản (STK)**: `6888200808`
-  - **Chủ tài khoản**: `NGUYEN PHUC HAI SON` (Nguyễn Phúc Hải Sơn)
+  - **Ngân hàng**: VietinBank (Ngân hàng TMCP Công Thương Việt Nam - Mã `VietinBank` / `ICB`)
+  - **Số tài khoản (STK)**: `106880869088`
+  - **Chủ tài khoản**: `NGUYEN PHUC HAI SON` (Nguyen Phuc Hai Son)
   - **Số tiền thu phí**: `20.000 VNĐ`
   - **Cú pháp chuyển khoản**: `LF` + 5 số ngẫu nhiên (Ví dụ: `LF12345`)
 
@@ -247,17 +247,17 @@
 
 ### 4.16. Kiến Trúc Cầu Nối Webhook Ngân Hàng Tự Động (Bank Automation Bridge - SePay)
 - **Bản chất kỹ thuật**:
-  - Tài khoản ngân hàng cá nhân (Techcombank `6888200808`) là một hệ thống nội bộ đóng. Khi có người chuyển tiền vào, ngân hàng chỉ gửi thông báo (Notification) về ứng dụng Techcombank trên điện thoại của chủ tài khoản, ngân hàng **không thể tự động biết website là gì** để gửi dữ liệu tới.
+  - Tài khoản ngân hàng cá nhân (VietinBank `106880869088`) là một hệ thống nội bộ đóng. Khi có người chuyển tiền vào, ngân hàng chỉ gửi thông báo (Notification) về ứng dụng VietinBank iPay trên điện thoại của chủ tài khoản, ngân hàng **không thể tự động biết website là gì** để gửi dữ liệu tới.
   - Do đó, để website tự động nhận diện được tiền chuyển vào tài khoản cá nhân, bắt buộc cần một dịch vụ trung gian chuyên dụng đọc biến động số dư ngân hàng và bắn Webhook sang website.
   - Cổng trung gian tiêu chuẩn, an toàn và có gói miễn phí tại Việt Nam: **SePay (sepay.vn)** (hoặc Casso / PayOS).
 - **Quy trình kết nối tự động 100% trong 2 phút**:
   1. Đăng ký tài khoản miễn phí tại `https://sepay.vn`.
-  2. Liên kết tài khoản Techcombank `6888200808` vào SePay (cài app SePay trên điện thoại để tự động bắt thông báo biến động số dư Techcombank).
+  2. Liên kết tài khoản VietinBank `106880869088` vào SePay (cài app SePay trên điện thoại để tự động bắt thông báo biến động số dư VietinBank).
   3. Cài đặt Webhook URL trên SePay trỏ về endpoint của ứng dụng:
      `https://haisonflashcard.vercel.app/api/payment-webhook`
      (Phương thức: `POST`, Dữ liệu: `JSON`).
   4. Cơ chế luồng dữ liệu tự động:
-     Khách chuyển tiền VietQR với mã `LFxxxxx` -> App Techcombank nhận tiền -> SePay đọc biến động -> SePay POST Webhook tới `/api/payment-webhook` -> Vercel Endpoint cập nhật `payment_orders/LFxxxxx` thành `PAID` trên Firestore -> Trình duyệt khách hàng tự động nhận diện và mở khóa tài khoản ngay lập tức (1-3s).
+     Khách chuyển tiền VietQR với mã `LFxxxxx` -> App VietinBank nhận tiền -> SePay đọc biến động -> SePay POST Webhook tới `/api/payment-webhook` -> Vercel Endpoint cập nhật `payment_orders/LFxxxxx` thành `PAID` trên Firestore -> Trình duyệt khách hàng tự động nhận diện và mở khóa tài khoản ngay lập tức (1-3s).
 
 ---
 

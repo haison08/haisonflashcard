@@ -165,7 +165,7 @@ class App {
     if (!lockView) return;
 
     const cfg = payment.getConfig();
-    const qrUrl = `https://img.vietqr.io/image/${cfg.bankId || 'TCB'}-${cfg.accountNo || '6888200808'}-compact2.png?amount=20000&addInfo=LFTEST&accountName=${encodeURIComponent(cfg.accountName || 'NGUYEN PHUC HAI SON')}`;
+    const qrUrl = `https://img.vietqr.io/image/${cfg.bankId || 'VietinBank'}-${cfg.accountNo || '106880869088'}-compact2.png?amount=20000&addInfo=LFTEST&accountName=${encodeURIComponent(cfg.accountName || 'NGUYEN PHUC HAI SON')}`;
 
     lockView.innerHTML = `
       <div class="guest-lock-container">
@@ -180,32 +180,32 @@ class App {
             Hệ thống yêu cầu <strong>kích hoạt tài khoản (20.000 VNĐ)</strong> để bảo vệ lộ trình học, cá nhân hóa bộ từ vựng, tính toán chu kỳ lặp lại ngắt quãng (SRS Leitner) và đồng bộ xuyên suốt mọi thiết bị.
           </p>
 
-          <!-- Khu vực Quét Mã Chuyển Tiền Test Trực Tiếp (Techcombank) -->
+          <!-- Khu vực Quét Mã Chuyển Tiền Test Trực Tiếp (VietinBank) -->
           <div class="guest-lock-grid">
             <div style="text-align: center;">
               <div class="vietqr-box" style="margin: 0 auto; max-width: 240px; background: #ffffff; padding: 10px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-                <img src="${qrUrl}" alt="VietQR Techcombank Test" style="width: 100%; border-radius: 8px; display: block;" />
+                <img src="${qrUrl}" alt="VietQR VietinBank Test" style="width: 100%; border-radius: 8px; display: block;" />
                 <div style="font-size: 0.72rem; color: #475569; margin-top: 6px; font-weight: 600;">
-                  Quét mã trên App Techcombank hoặc ngân hàng
+                  Quét mã trên App VietinBank iPay hoặc ngân hàng bất kỳ
                 </div>
               </div>
             </div>
 
             <div>
               <div style="font-size: 0.85rem; font-weight: 700; color: #10b981; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
-                <span class="pulsing-radar-dot"></span> Cổng Thanh Toán Techcombank Trực Tiếp
+                <span class="pulsing-radar-dot"></span> Cổng Thanh Toán VietinBank Trực Tiếp
               </div>
 
               <div class="payment-detail-card" style="margin-bottom: 1rem;">
                 <div class="payment-row">
                   <span class="payment-row-label">Ngân hàng:</span>
-                  <span class="payment-row-val"><strong>${this.escapeHtml(cfg.bankName || 'Techcombank (TCB)')}</strong></span>
+                  <span class="payment-row-val"><strong>${this.escapeHtml(cfg.bankName || 'VietinBank')}</strong></span>
                 </div>
                 <div class="payment-row">
                   <span class="payment-row-label">Số tài khoản:</span>
                   <span class="payment-row-val">
-                    <strong>${this.escapeHtml(cfg.accountNo || '6888200808')}</strong>
-                    <button class="copy-badge" id="btn-copy-lock-stk" data-copy="${cfg.accountNo || '6888200808'}">Sao chép</button>
+                    <strong>${this.escapeHtml(cfg.accountNo || '106880869088')}</strong>
+                    <button class="copy-badge" id="btn-copy-lock-stk" data-copy="${cfg.accountNo || '106880869088'}">Sao chép</button>
                   </span>
                 </div>
                 <div class="payment-row">
@@ -625,7 +625,7 @@ class App {
 
              <div class="form-group" style="margin-bottom: 0.85rem;">
                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Số Tài Khoản (STK):</label>
-               <input type="text" class="form-input" id="pay-cfg-account-no" value="${this.escapeHtml(cfg.accountNo || '')}" placeholder="VD: 6888200808" style="font-family: var(--font-mono); font-weight: 600;">
+               <input type="text" class="form-input" id="pay-cfg-account-no" value="${this.escapeHtml(cfg.accountNo || '')}" placeholder="VD: 106880869088" style="font-family: var(--font-mono); font-weight: 600;">
              </div>
 
              <div class="form-group" style="margin-bottom: 0.85rem;">

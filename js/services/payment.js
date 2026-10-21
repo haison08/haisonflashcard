@@ -12,9 +12,9 @@ const STORAGE_KEYS = {
 
 // Cấu hình tài khoản ngân hàng thụ hưởng mặc định
 const DEFAULT_PAYMENT_CONFIG = {
-  bankId: 'TCB', // Techcombank (Ngân hàng TMCP Kỹ Thương Việt Nam)
-  bankName: 'Techcombank',
-  accountNo: '6888200808', // STK Techcombank của Nguyễn Phúc Hải Sơn
+  bankId: 'VietinBank', // VietinBank (Ngân hàng TMCP Công Thương Việt Nam)
+  bankName: 'VietinBank',
+  accountNo: '106880869088', // STK VietinBank của Nguyen Phuc Hai Son
   accountName: 'NGUYEN PHUC HAI SON',
   amount: 20000, // 20.000 VNĐ
   sepayApiKey: '', // API Token từ SePay nếu dùng webhook tự động
@@ -34,8 +34,8 @@ class PaymentService {
       const saved = localStorage.getItem(STORAGE_KEYS.PAYMENT_CONFIG);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Tự động nâng cấp nếu đang lưu STK cũ
-        if (parsed.accountNo === '0868888888') {
+        // Tự động nâng cấp nếu đang lưu STK cũ Techcombank hoặc demo
+        if (parsed.accountNo === '0868888888' || parsed.accountNo === '6888200808') {
           this.config = { ...DEFAULT_PAYMENT_CONFIG };
           localStorage.setItem(STORAGE_KEYS.PAYMENT_CONFIG, JSON.stringify(this.config));
         } else {
@@ -292,7 +292,7 @@ class PaymentService {
     // Nếu chưa nhận được tiền: Từ chối kích hoạt 100%!
     return {
       success: false,
-      error: `Hệ thống chưa tìm thấy giao dịch chuyển tiền 20.000đ cho mã đơn ${orderCode} trên tài khoản Techcombank ${this.config.accountNo}. Nếu bạn vừa chuyển tiền, vui lòng chờ 5-10 giây để ngân hàng gửi tín hiệu rồi bấm kiểm tra lại nhé!`
+      error: `Hệ thống chưa tìm thấy giao dịch chuyển tiền 20.000đ cho mã đơn ${orderCode} trên tài khoản ${this.config.bankName || 'VietinBank'} ${this.config.accountNo}. Nếu bạn vừa chuyển tiền, vui lòng chờ 5-10 giây để ngân hàng gửi tín hiệu rồi bấm kiểm tra lại nhé!`
     };
   }
 
