@@ -2,17 +2,18 @@
  * app.js - Main Application Coordinator & Router with Auth Integration
  */
 
-import { storage } from './services/storage.js?v=2.4';
-import { audio } from './services/audio.js?v=2.4';
-import { auth } from './services/auth.js?v=2.4';
-import { srs } from './services/srs.js?v=2.4';
-import { speechRec } from './services/speechRec.js?v=2.4';
-import { cloudSync } from './services/cloudSync.js?v=2.4';
-import { authModal } from './components/authModal.js?v=2.4';
-import { cardViewer } from './components/cardViewer.js?v=2.4';
-import { quizMode } from './components/quizMode.js?v=2.4';
-import { deckManager } from './components/deckManager.js?v=2.4';
-import { statsView } from './components/statsView.js?v=2.4';
+import { storage } from './services/storage.js';
+import { audio } from './services/audio.js';
+import { auth } from './services/auth.js';
+import { srs } from './services/srs.js';
+import { speechRec } from './services/speechRec.js';
+import { cloudSync } from './services/cloudSync.js';
+import { payment } from './services/payment.js';
+import { authModal } from './components/authModal.js';
+import { cardViewer } from './components/cardViewer.js';
+import { quizMode } from './components/quizMode.js';
+import { deckManager } from './components/deckManager.js';
+import { statsView } from './components/statsView.js';
 
 class App {
   constructor() {
@@ -24,6 +25,7 @@ class App {
     this.authModal = authModal;
     this.storage = storage;
     this.auth = auth;
+    this.payment = payment;
     this.srs = srs;
     this.audio = audio;
     this.speechRec = speechRec;
@@ -280,6 +282,24 @@ class App {
                 ${cloudSync.isConfigured ? '⚙️ Xem/Đổi cấu hình Firebase' : '⚡ Kết nối Firebase Cloud'}
               </button>
             </div>
+
+            <!-- VietQR Payment Configuration (Admin) -->
+            <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-surface-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <div style="font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+                  💳 Cổng Thu Phí VietQR 20.000đ
+                </div>
+                <span class="badge badge-box-4" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;">
+                  20.000 VNĐ
+                </span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Ngân hàng thụ hưởng: <strong>${this.escapeHtml(payment.config.bankId)}</strong> • STK: <strong>${this.escapeHtml(payment.config.accountNo)}</strong> • Chủ TK: <strong>${this.escapeHtml(payment.config.accountName)}</strong>
+              </p>
+              <button class="btn btn-secondary btn-sm" id="btn-open-payment-config" style="width: 100%;">
+                ⚙️ Cài đặt STK & Ngân Hàng Thụ Hưởng
+              </button>
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary" id="settings-cancel-btn">Đóng</button>
@@ -299,6 +319,11 @@ class App {
     // Mở cấu hình Cloud Sync Firebase
     document.getElementById('btn-open-cloud-config')?.addEventListener('click', () => {
       this.openCloudConfigModal();
+    });
+
+    // Mở cấu hình Cổng Thu Phí VietQR
+    document.getElementById('btn-open-payment-config')?.addEventListener('click', () => {
+      this.openPaymentConfigModal();
     });
 
 
@@ -418,9 +443,121 @@ class App {
       }
     });
   }
+ 
+   openPaymentConfigModal() {
+     const modalContainer = document.getElementById('app-settings-modal-wrap');
+     if (!modalContainer) return;
 
+     const cfg = payment.getConfig();
 
-  bindGlobalEvents() {
+     const banks = [
+       { id: 'MBBank', name: 'MBBank (Quân Đội)' },
+       { id: 'Vietcombank', name: 'Vietcombank (VCB)' },
+       { id: 'Techcombank', name: 'Techcombank (TCB)' },
+       { id: 'VPBank', name: 'VPBank' },
+       { id: 'ACB', name: 'ACB (Á Châu)' },
+       { id: 'BIDV', name: 'BIDV' },
+       { id: 'VietinBank', name: 'VietinBank' },
+       { id: 'TPBank', name: 'TPBank' },
+       { id: 'Agribank', name: 'Agribank' },
+       { id: 'Sacombank', name: 'Sacombank' },
+       { id: 'OCB', name: 'OCB' },
+       { id: 'MSB', name: 'MSB (Hàng Hải)' },
+       { id: 'MoMo', name: 'Ví MoMo' }
+     ];
+
+     const bankOptions = banks.map(b => 
+       `<option value="${b.id}" ${b.id.toLowerCase() === (cfg.bankId || '').toLowerCase() ? 'selected' : ''}>${b.name}</option>`
+     ).join('');
+
+     modalContainer.innerHTML = `
+       <div class="modal-overlay active">
+         <div class="modal-box" style="max-width: 520px;">
+           <div class="modal-header">
+             <h3 class="modal-title">💳 Cấu Hình Thu Phí VietQR 20.000đ</h3>
+             <button class="modal-close" id="payment-modal-close">&times;</button>
+           </div>
+           <div class="modal-body">
+             <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
+               Cấu hình tài khoản ngân hàng để nhận tiền nạp tự động khi người dùng đăng ký tài khoản (<strong>20.000 VNĐ</strong>).
+             </p>
+
+             <div class="form-group" style="margin-bottom: 0.85rem;">
+               <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Ngân Hàng Thụ Hưởng:</label>
+               <select class="form-select" id="pay-cfg-bank">
+                 ${bankOptions}
+               </select>
+             </div>
+
+             <div class="form-group" style="margin-bottom: 0.85rem;">
+               <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Số Tài Khoản (STK):</label>
+               <input type="text" class="form-input" id="pay-cfg-account-no" value="${this.escapeHtml(cfg.accountNo || '')}" placeholder="VD: 0868888888" style="font-family: var(--font-mono); font-weight: 600;">
+             </div>
+
+             <div class="form-group" style="margin-bottom: 0.85rem;">
+               <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Tên Chủ Tài Khoản (In hoa không dấu):</label>
+               <input type="text" class="form-input" id="pay-cfg-account-name" value="${this.escapeHtml(cfg.accountName || '')}" placeholder="VD: NGUYEN PHUC HAI SON" style="text-transform: uppercase; font-weight: 600;">
+             </div>
+
+             <div class="form-group" style="margin-bottom: 0.85rem;">
+               <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Số Tiền Đăng Ký (VNĐ):</label>
+               <input type="number" class="form-input" id="pay-cfg-amount" value="${cfg.registrationFee || 20000}" min="1000" step="1000" style="font-weight: 600;">
+             </div>
+
+             <div class="form-group" style="margin-bottom: 1rem;">
+               <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">SePay Webhook API Key (Tùy chọn tự động):</label>
+               <input type="password" class="form-input" id="pay-cfg-sepay-key" value="${this.escapeHtml(cfg.sepayApiKey || '')}" placeholder="Để trống nếu dùng xác nhận thủ công/mô phỏng">
+               <div style="font-size: 0.78rem; color: var(--text-subtle); margin-top: 0.35rem;">
+                 Webhook URL nhận thông báo biến động số dư: <code style="color: var(--color-primary); background: var(--bg-surface-elevated); padding: 0.15rem 0.35rem; border-radius: 4px;">https://haisonflashcard.vercel.app/api/payment-webhook</code>
+               </div>
+             </div>
+           </div>
+           <div class="modal-footer" style="justify-content: flex-end; gap: 0.5rem;">
+             <button class="btn btn-secondary btn-sm" id="btn-payment-cancel">Hủy</button>
+             <button class="btn btn-primary btn-sm" id="btn-payment-save">💾 Lưu Cấu Hình</button>
+           </div>
+         </div>
+       </div>
+     `;
+
+     const closeModal = () => {
+       modalContainer.innerHTML = '';
+     };
+
+     document.getElementById('payment-modal-close')?.addEventListener('click', closeModal);
+     document.getElementById('btn-payment-cancel')?.addEventListener('click', closeModal);
+
+     document.getElementById('btn-payment-save')?.addEventListener('click', () => {
+       const bankId = document.getElementById('pay-cfg-bank').value;
+       const accountNo = document.getElementById('pay-cfg-account-no').value.trim();
+       const accountName = document.getElementById('pay-cfg-account-name').value.trim().toUpperCase();
+       const registrationFee = parseInt(document.getElementById('pay-cfg-amount').value, 10) || 20000;
+       const sepayApiKey = document.getElementById('pay-cfg-sepay-key').value.trim();
+
+       if (!accountNo) {
+         alert('Vui lòng nhập Số Tài Khoản (STK)!');
+         return;
+       }
+       if (!accountName) {
+         alert('Vui lòng nhập Tên Chủ Tài Khoản!');
+         return;
+       }
+
+       payment.updateConfig({
+         bankId,
+         accountNo,
+         accountName,
+         registrationFee,
+         sepayApiKey
+       });
+
+       audio.playSuccess();
+       this.showToast('✅ Đã cập nhật cấu hình VietQR thành công!', 'success');
+       closeModal();
+     });
+   }
+
+   bindGlobalEvents() {
     // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -479,6 +616,7 @@ function startApp() {
   window.audioService = audio;
   window.speechRecService = speechRec;
   window.cloudSyncService = cloudSync;
+  window.paymentService = payment;
   window.cardViewer = cardViewer;
   window.quizMode = quizMode;
   window.deckManager = deckManager;

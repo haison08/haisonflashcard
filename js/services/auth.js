@@ -39,50 +39,17 @@ class AuthService {
       this.users = {};
     }
 
-    // Nếu chưa có tài khoản nào trong hệ thống, tự động tạo 1 tài khoản Demo ban đầu
-    if (Object.keys(this.users).length === 0) {
-      const demoId = 'user_demo';
-      const todayStr = new Date().toISOString().split('T')[0];
-      this.users[demoId] = {
-        id: demoId,
-        name: 'Học viên Demo',
-        email: 'demo@linguaflash.com',
-        password: 'demo',
-        avatar: '🧑‍🎓',
-        createdAt: Date.now(),
-        decks: JSON.parse(JSON.stringify(DEFAULT_DECKS)),
-        settings: { ...DEFAULT_SETTINGS },
-        streak: { current: 1, longest: 1, lastDate: todayStr },
-        logs: [
-          {
-            timestamp: Date.now(),
-            dateStr: todayStr,
-            cardId: 'ielts-1',
-            deckId: 'deck-ielts',
-            rating: 3,
-            isCorrect: true,
-            mode: 'flashcard'
-          }
-        ]
-      };
-      this.saveUsersDb();
-    }
-
-    // Khôi phục phiên làm việc (Session)
+    // Khôi phục phiên làm việc (Session) nếu người dùng đã đăng nhập hợp lệ từ trước
     try {
       const sessionUserId = localStorage.getItem(STORAGE_KEYS.CURRENT_SESSION);
       if (sessionUserId && this.users[sessionUserId]) {
         this.currentUser = this.users[sessionUserId];
       } else {
-        // Mặc định đăng nhập tài khoản demo nếu chưa ai đăng nhập
-        const firstUserId = Object.keys(this.users)[0];
-        if (firstUserId) {
-          this.currentUser = this.users[firstUserId];
-          localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, firstUserId);
-        }
+        this.currentUser = null;
       }
     } catch (e) {
       console.error('Lỗi khôi phục session:', e);
+      this.currentUser = null;
     }
   }
 

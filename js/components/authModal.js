@@ -1,15 +1,18 @@
 /**
- * authModal.js - Giao diện Đăng ký, Đăng nhập và Quản lý hồ sơ người dùng
+ * authModal.js - Giao diện Đăng ký (kèm VietQR 20k), Đăng nhập và Quản lý hồ sơ người dùng
  */
 
 import { auth } from '../services/auth.js';
 import { audio } from '../services/audio.js';
+import { payment } from '../services/payment.js';
 
 const AVATAR_OPTIONS = ['🧑‍🎓', '👩‍🎓', '👨‍💻', '👩‍💻', '🦁', '🦊', '🐼', '🚀', '💡', '⚡', '🦉', '🌟'];
 
 class AuthModal {
   constructor() {
     this.selectedAvatar = '🧑‍🎓';
+    this.pollInterval = null;
+    this.countdownTimer = null;
   }
 
   getContainer() {
@@ -24,6 +27,7 @@ class AuthModal {
 
   // Mở Modal Đăng nhập / Đăng ký
   open(defaultTab = 'login') {
+    this.clearTimers();
     const container = this.getContainer();
     this.selectedAvatar = '🧑‍🎓';
 
@@ -61,17 +65,14 @@ class AuthModal {
                 <input type="password" class="form-input" id="login-password" placeholder="Nhập mật khẩu..." autocomplete="current-password" />
               </div>
 
-              <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="margin-top: 1.5rem;">
                 <button class="btn btn-primary btn-lg" id="btn-submit-login" style="width: 100%;">
                   Đăng Nhập
-                </button>
-                <button class="btn btn-secondary" id="btn-quick-demo-login" style="width: 100%;">
-                  🚀 Trải nghiệm nhanh với Tài khoản Demo
                 </button>
               </div>
 
               <div style="text-align: center; margin-top: 1.25rem; font-size: 0.88rem; color: var(--text-muted);">
-                Chưa có tài khoản? <a href="#" id="link-switch-to-register" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">Đăng ký ngay</a>
+                Chưa có tài khoản? <a href="#" id="link-switch-to-register" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">Đăng ký kích hoạt ngay</a>
               </div>
             </div>
 
@@ -103,9 +104,18 @@ class AuthModal {
                 </div>
               </div>
 
-              <div style="margin-top: 1.5rem;">
+              <!-- Pay to register banner -->
+              <div style="background: rgba(99, 102, 241, 0.1); border: 1px dashed var(--color-primary); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.6rem;">💳</span>
+                <div>
+                  Phí kích hoạt tài khoản vĩnh viễn: <strong style="color: #10b981; font-size: 0.95rem;">20.000 VNĐ</strong><br />
+                  <span style="font-size: 0.78rem;">Quét mã VietQR tự động, tài khoản kích hoạt sau 1-3 giây.</span>
+                </div>
+              </div>
+
+              <div style="margin-top: 1.25rem;">
                 <button class="btn btn-primary btn-lg" id="btn-submit-register" style="width: 100%;">
-                  Tạo Tài Khoản & Bắt Đầu Học
+                  Tiếp Tục Quét Mã VietQR (20.000đ) ⚡
                 </button>
               </div>
 
@@ -146,6 +156,7 @@ class AuthModal {
     };
 
     const closeModal = () => {
+      this.clearTimers();
       container.innerHTML = '';
     };
 
@@ -233,40 +244,292 @@ class AuthModal {
       }
     });
 
-    // Đăng nhập nhanh tài khoản Demo
-    document.getElementById('btn-quick-demo-login')?.addEventListener('click', async () => {
-      const res = await auth.login('demo@linguaflash.com', 'demo');
-      if (res.success) {
-        audio.playSuccess();
-        closeModal();
-        if (window.app) window.app.onUserLoggedIn(res.user);
-      }
-    });
-
-
-    // Xử lý Đăng Ký
-    document.getElementById('btn-submit-register')?.addEventListener('click', () => {
+    // Xử lý Đăng Ký -> Chuyển sang Quét mã VietQR 20.000đ
+    document.getElementById('btn-submit-register')?.addEventListener('click', async () => {
       clearError();
-      const name = document.getElementById('reg-name').value;
-      const email = document.getElementById('reg-email').value;
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
       const pass = document.getElementById('reg-password').value;
+      const regBtn = document.getElementById('btn-submit-register');
 
-      const res = auth.register({
-        name,
-        email,
-        password: pass,
-        avatar: this.selectedAvatar
-      });
+      if (!name) {
+        showError('Vui lòng nhập họ và tên của bạn!');
+        return;
+      }
+      if (!email || !email.includes('@')) {
+        showError('Email không hợp lệ!');
+        return;
+      }
+      if (!pass || pass.length < 4) {
+        showError('Mật khẩu phải có tối thiểu 4 ký tự!');
+        return;
+      }
 
-      if (res.success) {
-        audio.playSuccess();
-        closeModal();
-        if (window.app) window.app.onUserLoggedIn(res.user);
-      } else {
-        audio.playWrong();
-        showError(res.error);
+      // Kiểm tra trùng lặp email
+      const isExisted = Object.values(auth.users).some(u => u.email.toLowerCase() === email.toLowerCase());
+      if (isExisted) {
+        showError('Email này đã được đăng ký tài khoản! Vui lòng chọn email khác hoặc Đăng nhập.');
+        return;
+      }
+
+      if (regBtn) {
+        regBtn.disabled = true;
+        regBtn.textContent = 'Đang khởi tạo mã VietQR...';
+      }
+
+      try {
+        const order = await payment.createRegistrationOrder({
+          name,
+          email,
+          password: pass,
+          avatar: this.selectedAvatar
+        });
+
+        // Mở pop-up thanh toán VietQR
+        this.openVietQRPaymentModal(order);
+      } catch (e) {
+        showError('Lỗi khởi tạo đơn: ' + e.message);
+        if (regBtn) {
+          regBtn.disabled = false;
+          regBtn.textContent = 'Tiếp Tục Quét Mã VietQR (20.000đ) ⚡';
+        }
       }
     });
+  }
+
+  /**
+   * Màn hình Modal Quét mã VietQR 20.000 VNĐ
+   */
+  openVietQRPaymentModal(order) {
+    this.clearTimers();
+    const container = this.getContainer();
+    const qrUrl = payment.getVietQRUrl(order);
+
+    container.innerHTML = `
+      <div class="modal-overlay active" id="vietqr-modal-overlay">
+        <div class="modal-box" style="max-width: 520px; text-align: center;">
+          <div class="modal-header" style="justify-content: center; position: relative;">
+            <h3 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+              <span>💳</span> Kích Hoạt Tài Khoản (20.000đ)
+            </h3>
+            <button class="modal-close" id="btn-payment-close" style="position: absolute; right: 1rem;">&times;</button>
+          </div>
+
+          <div class="modal-body" style="padding-top: 0.5rem;" id="payment-modal-body">
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Mở app ngân hàng bất kỳ (MB, Vietcombank, Techcombank, MoMo,...) quét mã để thanh toán tự động:
+            </p>
+
+            <!-- QR Code Card -->
+            <div class="vietqr-box">
+              <img src="${qrUrl}" alt="VietQR Payment 20.000 VND" class="vietqr-img" id="vietqr-image-el" />
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 6px; font-weight: 600;">
+                Quét mã qua ứng dụng ngân hàng hoặc MoMo
+              </div>
+            </div>
+
+            <!-- Payment Details Table with 1-click Copy -->
+            <div class="payment-detail-card" style="text-align: left;">
+              <div class="payment-row">
+                <span class="payment-row-label">Ngân hàng:</span>
+                <span class="payment-row-val">${order.bankId}</span>
+              </div>
+              <div class="payment-row">
+                <span class="payment-row-label">Số tài khoản:</span>
+                <span class="payment-row-val">
+                  <span>${order.accountNo}</span>
+                  <button class="copy-badge" data-copy="${order.accountNo}">Sao chép</button>
+                </span>
+              </div>
+              <div class="payment-row">
+                <span class="payment-row-label">Chủ tài khoản:</span>
+                <span class="payment-row-val">${order.accountName}</span>
+              </div>
+              <div class="payment-row">
+                <span class="payment-row-label">Số tiền:</span>
+                <span class="payment-row-val" style="color: #10b981; font-size: 1.05rem;">
+                  <span>20.000 VNĐ</span>
+                  <button class="copy-badge" data-copy="20000">Sao chép</button>
+                </span>
+              </div>
+              <div class="payment-row" style="background: rgba(245, 158, 11, 0.1); padding: 6px 10px; border-radius: var(--radius-sm); border: 1px dashed #f59e0b;">
+                <span class="payment-row-label" style="color: #f59e0b; font-weight: 700;">Nội dung CK (bắt buộc):</span>
+                <span class="payment-row-val" style="color: #f59e0b; font-size: 1.1rem; font-family: var(--font-mono);">
+                  <span>${order.orderId}</span>
+                  <button class="copy-badge" data-copy="${order.orderId}" style="background: #f59e0b; color: #ffffff; border-color: #f59e0b;">Sao chép mã</button>
+                </span>
+              </div>
+            </div>
+
+            <!-- Listening Radar Status & Countdown Timer -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0.75rem 0; font-size: 0.85rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; color: #10b981;">
+                <span class="pulsing-radar-dot"></span>
+                <span id="payment-status-text">Đang chờ xác nhận chuyển khoản (1-3s)...</span>
+              </div>
+              <div style="color: var(--text-muted);" id="payment-countdown-text">
+                Hết hạn: <strong style="color: var(--text-main);" id="timer-val">10:00</strong>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+              <button class="btn btn-outline" id="btn-manual-check-payment" style="width: 100%;">
+                🔄 Tôi đã chuyển tiền (Kiểm tra ngay)
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-simulate-pay-success" style="width: 100%; border: 1px dashed #10b981; color: #10b981;">
+                ⚡ Xác nhận nạp tiền thành công (Dành cho Test / Admin)
+              </button>
+              <button class="btn btn-ghost btn-sm" id="btn-back-to-edit" style="color: var(--text-muted);">
+                ← Quay lại sửa thông tin đăng ký
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.bindPaymentModalEvents(order);
+  }
+
+  bindPaymentModalEvents(order) {
+    const container = this.getContainer();
+
+    const closeModal = () => {
+      this.clearTimers();
+      container.innerHTML = '';
+    };
+
+    document.getElementById('btn-payment-close')?.addEventListener('click', closeModal);
+
+    // Quay lại form đăng ký
+    document.getElementById('btn-back-to-edit')?.addEventListener('click', () => {
+      this.clearTimers();
+      this.open('register');
+    });
+
+    // Xử lý nút Copy nhanh
+    container.querySelectorAll('.copy-badge').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const textToCopy = btn.getAttribute('data-copy');
+        if (textToCopy) {
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Đã chép!';
+            btn.style.color = '#10b981';
+            audio.playClick();
+            setTimeout(() => {
+              btn.textContent = originalText;
+              btn.style.color = '';
+            }, 1500);
+          });
+        }
+      });
+    });
+
+    // Countdown Timer 10 phút
+    let timeLeft = 10 * 60;
+    const timerValEl = document.getElementById('timer-val');
+    this.countdownTimer = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        this.clearTimers();
+        if (timerValEl) timerValEl.textContent = '00:00 (Hết hạn)';
+        const statusText = document.getElementById('payment-status-text');
+        if (statusText) statusText.textContent = 'Đơn hàng đã hết hạn. Vui lòng tạo đơn mới.';
+      } else {
+        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const s = (timeLeft % 60).toString().padStart(2, '0');
+        if (timerValEl) timerValEl.textContent = `${m}:${s}`;
+      }
+    }, 1000);
+
+    // Hàm xử lý kích hoạt tài khoản khi thanh toán thành công
+    const handleSuccess = async (res) => {
+      this.clearTimers();
+      audio.playVictoryFanfare();
+      if (window.cardViewer && window.cardViewer.fireConfetti) {
+        window.cardViewer.fireConfetti();
+      }
+
+      const bodyEl = document.getElementById('payment-modal-body');
+      if (bodyEl) {
+        bodyEl.innerHTML = `
+          <div style="padding: 2.5rem 1rem; text-align: center;">
+            <div style="font-size: 4rem; animation: bounce 0.6s ease infinite alternate;">🎉</div>
+            <h2 style="color: #10b981; font-size: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+              Thanh Toán Thành Công!
+            </h2>
+            <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.75rem;">
+              Hệ thống đã nhận <strong>20.000 VNĐ</strong> với mã <strong>${order.orderId}</strong>.<br />
+              Tài khoản <strong>${this.escapeHtml(order.userData.name)}</strong> đã được kích hoạt vĩnh viễn trên toàn hệ thống!
+            </p>
+            <button class="btn btn-primary btn-lg" id="btn-start-studying-now" style="min-width: 200px;">
+              🚀 Bắt Đầu Học Ngay
+            </button>
+          </div>
+        `;
+
+        document.getElementById('btn-start-studying-now')?.addEventListener('click', () => {
+          closeModal();
+          if (window.app) window.app.onUserLoggedIn(res.user);
+        });
+      }
+    };
+
+    // Kiểm tra thủ công khi người dùng bấm nút
+    document.getElementById('btn-manual-check-payment')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-manual-check-payment');
+      btn.disabled = true;
+      btn.textContent = 'Đang kiểm tra từ máy chủ...';
+
+      const check = await payment.checkOrderStatus(order.orderId);
+      if (check.status === 'PAID') {
+        const activateRes = await payment.confirmPaymentAndActivateAccount(order);
+        if (activateRes.success) {
+          handleSuccess(activateRes);
+          return;
+        }
+      } else {
+        audio.playClick();
+        alert('Hệ thống chưa nhận được khoản thanh toán 20.000đ với nội dung ' + order.orderId + '. Vui lòng kiểm tra lại app ngân hàng hoặc đợi trong giây lát nhé!');
+        btn.disabled = false;
+        btn.textContent = '🔄 Tôi đã chuyển tiền (Kiểm tra ngay)';
+      }
+    });
+
+    // Nút kích hoạt nhanh dành cho Test/Admin
+    document.getElementById('btn-simulate-pay-success')?.addEventListener('click', async () => {
+      const simRes = await payment.simulatePaymentSuccess(order.orderId);
+      if (simRes.success) {
+        handleSuccess(simRes);
+      } else {
+        alert('Lỗi kích hoạt: ' + simRes.error);
+      }
+    });
+
+    // Polling tự động mỗi 2.5 giây
+    this.pollInterval = setInterval(async () => {
+      const check = await payment.checkOrderStatus(order.orderId);
+      if (check.status === 'PAID') {
+        const activateRes = await payment.confirmPaymentAndActivateAccount(order);
+        if (activateRes.success) {
+          handleSuccess(activateRes);
+        }
+      }
+    }, 2500);
+  }
+
+  clearTimers() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
   }
 
   // Mở Profile Modal của người dùng hiện tại
@@ -298,35 +561,36 @@ class AuthModal {
               <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--grad-primary); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; box-shadow: 0 4px 15px var(--color-primary-glow);">
                 ${user.avatar || '🧑‍🎓'}
               </div>
-              <div style="flex: 1; overflow: hidden;">
-                <h4 style="font-family: var(--font-heading); font-size: 1.3rem; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                  ${this.escapeHtml(user.name)}
-                </h4>
-                <div style="font-size: 0.88rem; color: var(--text-muted);">${this.escapeHtml(user.email)}</div>
-                <div style="font-size: 0.78rem; color: var(--text-subtle); margin-top: 0.2rem;">Tham gia ngày: ${createdDate}</div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <h4 style="margin: 0; font-size: 1.25rem; font-weight: 700;">${this.escapeHtml(user.name)}</h4>
+                  <span style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Đã kích hoạt</span>
+                </div>
+                <div style="font-size: 0.88rem; color: var(--text-muted); margin-top: 2px;">${this.escapeHtml(user.email)}</div>
+                <div style="font-size: 0.78rem; color: var(--text-subtle); margin-top: 4px;">Tham gia từ: ${createdDate}</div>
               </div>
             </div>
 
-            <!-- User Quick Stats Grid -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; text-align: center;">
-              <div style="background: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-md);">
+            <!-- Stats Mini Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem;">
+              <div style="background: var(--bg-surface); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); text-align: center;">
                 <div style="font-size: 1.4rem; font-weight: 800; color: #f59e0b;">🔥 ${user.streak ? user.streak.current : 0}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Streak ngày</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Ngày Streak</div>
               </div>
-              <div style="background: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-md);">
-                <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-primary);">${totalDecks}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Bộ từ</div>
+              <div style="background: var(--bg-surface); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 800; color: #6366f1;">📚 ${totalDecks}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Bộ Từ Vựng</div>
               </div>
-              <div style="background: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-md);">
-                <div style="font-size: 1.4rem; font-weight: 800; color: #10b981;">${totalCards}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Từ vựng</div>
+              <div style="background: var(--bg-surface); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 800; color: #10b981;">🗂️ ${totalCards}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Thẻ Ghi Nhớ</div>
               </div>
             </div>
 
-            <!-- Switch Account Section -->
-            <div style="margin-bottom: 1rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <label class="form-label" style="margin: 0; font-size: 0.9rem;">Chuyển đổi tài khoản khác:</label>
+            <!-- Account Switcher Section -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <div style="font-weight: 700; font-size: 0.95rem;">Tài Khoản Trên Thiết Bị Này</div>
                 <button class="btn btn-ghost btn-sm" id="btn-open-another-account" style="color: var(--color-primary); padding: 2px 6px;">
                   + Thêm tài khoản
                 </button>
@@ -339,7 +603,7 @@ class AuthModal {
                       <div style="font-size: 1.4rem;">${u.avatar}</div>
                       <div>
                         <div style="font-weight: 700; font-size: 0.92rem;">${this.escapeHtml(u.name)} ${u.id === user.id ? '<span style="font-size: 0.75rem; color: #10b981; margin-left: 4px;">(Đang dùng)</span>' : ''}</div>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">${this.escapeHtml(u.email)} • 🔥 ${u.streak} ngày</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">${this.escapeHtml(u.email)} • 🔥 ${u.streak ? u.streak.current : 0} ngày</div>
                       </div>
                     </div>
                     ${u.id !== user.id ? `

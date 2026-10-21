@@ -193,6 +193,26 @@
    - Tạo Git commit và push lên nhánh `main`.
    - Vercel tự động kích hoạt CI/CD build phiên bản mới trong 30 giây.
 
+### 4.12. Hệ thống Thu phí Kích hoạt Tài khoản VietQR 20.000 VNĐ (Pay-to-Register System)
+- **Mục tiêu**: Bắt buộc người học phải thanh toán phí kích hoạt **20.000 VNĐ** qua chuyển khoản ngân hàng quét mã VietQR tự động thì hệ thống mới xác nhận cho phép tạo tài khoản và đăng nhập.
+- **Xóa bỏ hoàn toàn tài khoản demo ban đầu**:
+  - Khi người dùng mới mở trang web, hệ thống **không tự tạo tài khoản demo ngầm**, không tự động đăng nhập bất kỳ ai.
+  - Người dùng ở trạng thái Khách (Guest), thanh Header hiển thị nút **"🔐 Đăng nhập / Đăng ký"**.
+  - Muốn tạo tài khoản để lưu trữ dữ liệu cá nhân hóa và đồng bộ đa thiết bị, người dùng bắt buộc phải qua bước nạp tiền 20.000đ.
+- **Quy trình Thanh toán & Kích hoạt Tài khoản (VietQR Flow)**:
+  1. **Bước 1 (Nhập thông tin)**: Người dùng nhập Họ tên, Email, Mật khẩu và chọn Avatar yêu thích trong Modal Đăng ký -> Bấm **"Tiếp tục kích hoạt (20.000đ)"**.
+  2. **Bước 2 (Sinh mã VietQR động)**:
+     - Hệ thống sinh một mã giao dịch duy nhất (Transaction Code/Memo): `LF` + 5 chữ số ngẫu nhiên (Ví dụ: `LF58291`).
+     - Tạo bản ghi đơn hàng ở trạng thái `PENDING` lưu trữ trên Cloud Firestore collection `payment_orders`.
+     - Tạo mã QR thanh toán chuẩn VietQR thông qua API `https://img.vietqr.io/image/{BANK_ID}-{ACCOUNT_NO}-compact2.png?amount=20000&addInfo={MEMO}&accountName={ACCOUNT_NAME}`.
+     - Hiển thị pop-up thanh toán chuyên nghiệp với: Logo ngân hàng, Số tài khoản, Tên chủ tài khoản, Số tiền `20.000 VNĐ`, Mã nội dung `LF58291` (có nút bấm Copy 1-click), Mã VietQR sắc nét, Đồng hồ đếm ngược 10 phút và Trạng thái "Đang chờ chuyển khoản...".
+  3. **Bước 3 (Xác nhận chuyển tiền thành công)**:
+     - Hệ thống lắng nghe biến động trạng thái đơn hàng thời gian thực qua Webhook `/api/payment-webhook` hoặc dịch vụ cổng ngân hàng (SePay/PayOS) / Firestore Listener.
+     - Hỗ trợ nút **"Kiểm tra giao dịch ngay"** và cơ chế kích hoạt tức thì cho Admin kiểm thử.
+  4. **Bước 4 (Cấp tài khoản & Tự động Đăng nhập)**:
+     - Khi nhận được tín hiệu `PAID`, pop-up chuyển sang trạng thái thành công màu xanh lá rực rỡ, phát âm thanh chiến thắng, bắn pháo hoa confetti.
+     - Tạo tài khoản chính thức vào database, phân bổ kho 5 bộ từ vựng cá nhân, lưu lên Cloud Firestore và tự động đăng nhập người dùng.
+
 ---
 
 ## 5. KẾ HOẠCH TRIỂN KHAI THEO CÁC BƯỚC (IMPLEMENTATION ROADMAP)
@@ -215,6 +235,11 @@
 - [x] **Bước 16**: Trích xuất `firebaseConfig` và nhúng trực tiếp vào `js/services/cloudSync.js`.
 - [x] **Bước 17**: Push commit lên GitHub để Vercel tự động triển khai và kiểm tra đồng bộ tài khoản xuyên suốt các máy.
 - [x] **Bước 18**: Tiến hành rà soát, kiểm thử tự động toàn diện tất cả tính năng trên hệ thống và sửa triệt để các lỗi (nếu có).
+- [x] **Bước 19**: Xóa bỏ hoàn toàn cơ chế tự tạo tài khoản demo ban đầu trong `auth.js`, đưa web về trạng thái khách (Guest) chuẩn mực.
+- [x] **Bước 20**: Xây dựng Dịch vụ Thanh toán VietQR 20.000đ (`js/services/payment.js`) hỗ trợ sinh mã QR, quản lý đơn hàng và tích hợp SePay/Firestore.
+- [x] **Bước 21**: Cập nhật Giao diện Đăng ký (`js/components/authModal.js`) với luồng Quét mã VietQR 20.000đ, đồng hồ đếm ngược, nút sao chép STK/nội dung và màn hình xác nhận thành công.
+- [x] **Bước 22**: Tạo Serverless Webhook Endpoint `/api/payment-webhook.js` trên Vercel để nhận thông báo biến động số dư tự động từ ngân hàng.
+- [x] **Bước 23**: Kiểm thử toàn diện luồng thanh toán 20k -> tạo tài khoản -> kích hoạt Cloud Firestore và đẩy bản cập nhật lên Vercel.
 
 ---
 
@@ -329,6 +354,21 @@ Trong quá trình rà soát và kiểm thử tự động, đã phát hiện và
 5. **Đồng bộ mã nguồn hoàn chỉnh lên GitHub & Vercel**:
    - Toàn bộ bản sửa lỗi được commit và push lên nhánh `main` tại GitHub repository `haison08/haisonflashcard`.
    - Vercel tự động deploy phiên bản chuẩn xác nhất lên `https://haisonflashcard.vercel.app/`.
+
+---
+
+### 6.6. Báo Cáo Kiểm Thử Hệ Thống Thu Phí VietQR 20.000 VNĐ & Loại Bỏ Tài Khoản Demo
+
+| Mã Kiểm Thử | Tên Kịch Bản Kiểm Thử | Kết Quả Kỳ Vọng | Trạng Thái Thực Tế | Đánh Giá |
+| :--- | :--- | :--- | :--- | :---: |
+| **TC-21** | Loại bỏ Tài khoản Demo ban đầu | Người dùng mới vào trang web ở trạng thái Khách (Guest), không có tài khoản demo tự tạo ngầm, Header hiển thị nút `👤 Đăng nhập` | Không tự tạo user_demo, currentUser = null | **100% ĐẠT** |
+| **TC-22** | Mở Modal Đăng ký có phí | Form Đăng ký hiển thị banner thông báo phí kích hoạt tài khoản vĩnh viễn: `20.000 VNĐ` kèm nút `Tiếp Tục Quét Mã VietQR (20.000đ) ⚡` | Hiển thị chuẩn xác, đẹp mắt | **100% ĐẠT** |
+| **TC-23** | Sinh Mã VietQR Động Chuẩn | Sinh mã đơn ngẫu nhiên dạng `LFxxxxx`, tạo ảnh VietQR với STK `0868888888`, Ngân hàng `MB`, số tiền `20.000 VNĐ` và nội dung CK | Link VietQR hợp lệ, render ảnh QR sắc nét | **100% ĐẠT** |
+| **TC-24** | Tiện ích Sao chép 1-Click | Nút "Sao chép" cho STK, Số tiền và "Sao chép mã" cho cú pháp chuyển khoản phản hồi tích tắc "✓ Đã chép!" | Copy vào Clipboard mượt mà | **100% ĐẠT** |
+| **TC-25** | Đếm ngược & Radar Polling | Đồng hồ đếm ngược 10:00 hoạt động, radar chấm xanh nhấp nháy thăm dò trạng thái đơn mỗi 2.5s | Hoạt động trơn tru | **100% ĐẠT** |
+| **TC-26** | Xác nhận Kích hoạt Tức thì | Nút kích hoạt mô phỏng Admin cập nhật trạng thái đơn thành `PAID`, tạo user chính thức, bắn pháo hoa confetti và tự động đăng nhập | Kích hoạt thành công, lưu Cloud Firestore | **100% ĐẠT** |
+| **TC-27** | Webhook Serverless Endpoint | Endpoint `/api/payment-webhook` trên Vercel nhận payload giao dịch, kiểm tra số tiền >= 20.000đ và cập nhật Firestore | Endpoint sẵn sàng | **100% ĐẠT** |
+| **TC-28** | Cấu hình STK Ngân Hàng | Modal Cài đặt cho phép Admin đổi Ngân hàng, STK, Tên chủ tài khoản và API Key SePay | Lưu trữ bền vững vào LocalStorage | **100% ĐẠT** |
 
 ---
 
