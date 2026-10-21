@@ -3,6 +3,16 @@
  * Hỗ trợ Firebase Cloud Firestore & Global Cloud Storage để dùng chung tài khoản trên mọi máy tính và điện thoại.
  */
 
+export const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBEm91ZYWOAq2BOeOTFUL1FP2C0PV0LekY",
+  authDomain: "haisonflashcard.firebaseapp.com",
+  projectId: "haisonflashcard",
+  storageBucket: "haisonflashcard.firebasestorage.app",
+  messagingSenderId: "764000051781",
+  appId: "1:764000051781:web:764bd9263e2a7eb27c792c",
+  measurementId: "G-SD6ZV6K3HK"
+};
+
 const STORAGE_KEYS = {
   FIREBASE_CONFIG: 'linguaflash_firebase_config',
   CLOUD_MODE: 'linguaflash_cloud_mode'
@@ -21,16 +31,18 @@ class CloudSyncService {
       const savedConfig = localStorage.getItem(STORAGE_KEYS.FIREBASE_CONFIG);
       if (savedConfig) {
         this.config = JSON.parse(savedConfig);
-        this.initFirebase();
       } else {
-        this.config = null;
-        this.isConfigured = false;
+        // Mặc định kích hoạt cấu hình Cloud của dự án haisonflashcard
+        this.config = DEFAULT_FIREBASE_CONFIG;
       }
+      this.initFirebase();
     } catch (e) {
       console.warn('Chưa cấu hình Firebase:', e);
-      this.isConfigured = false;
+      this.config = DEFAULT_FIREBASE_CONFIG;
+      this.initFirebase();
     }
   }
+
 
   saveConfig(newConfig) {
     try {

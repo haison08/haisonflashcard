@@ -174,6 +174,25 @@
   - Thiết lập `git init` với nhánh `main`, tạo `.gitignore` loại trừ các file rác hệ thống.
   - Hướng dẫn chi tiết từng bước đẩy lên GitHub và liên kết với Vercel chỉ với 1 click.
 
+### 4.11. Chi tiết Thao tác Thiết lập Firebase Console Tự Động (Firebase Automation Steps)
+1. **Khởi tạo Project**:
+   - Truy cập Firebase Console (`console.firebase.google.com`).
+   - Tạo Project mới với tên: `haisonflashcard`.
+   - Bỏ chọn Google Analytics để tối ưu tốc độ khởi tạo.
+2. **Kích hoạt Firestore Database**:
+   - Vào menu Firestore Database > Bấm Create database.
+   - Chọn chế độ *Test mode* (cho phép ứng dụng đọc/ghi dữ liệu học tập tự do).
+   - Chọn khu vực máy chủ (Region) phù hợp (ví dụ: `asia-southeast1` hoặc `nam5 / us-central1`).
+3. **Tạo Web App & Lấy `firebaseConfig`**:
+   - Bấm biểu tượng Web `</>` > Đặt nickname: `haisonflashcard-web`.
+   - Trích xuất đối tượng `firebaseConfig` bao gồm: `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`.
+4. **Nhúng trực tiếp vào mã nguồn**:
+   - Cập nhật `firebaseConfig` vào `js/services/cloudSync.js` làm cấu hình mặc định (Default Production Config).
+   - Bất kỳ ai mở `https://haisonflashcard.vercel.app` đều tự động kết nối vào Cloud Database này mà không cần dán thủ công!
+5. **Cập nhật lên GitHub & Vercel**:
+   - Tạo Git commit và push lên nhánh `main`.
+   - Vercel tự động kích hoạt CI/CD build phiên bản mới trong 30 giây.
+
 ---
 
 ## 5. KẾ HOẠCH TRIỂN KHAI THEO CÁC BƯỚC (IMPLEMENTATION ROADMAP)
@@ -189,12 +208,17 @@
 - [x] **Bước 9**: Cập nhật Dịch vụ Lưu trữ `js/services/storage.js` để gắn liền với tài khoản đang đăng nhập.
 - [x] **Bước 10**: Xây dựng Giao diện Đăng nhập / Đăng ký (`js/components/authModal.js`).
 - [x] **Bước 11**: Kiểm thử luồng dữ liệu độc lập của từng tài khoản.
-- [ ] **Bước 12**: Xây dựng Dịch vụ Đồng bộ Đám mây (`js/services/cloudSync.js`) kết nối Firebase/Cloud Database để chia sẻ tài khoản xuyên suốt mọi máy tính và điện thoại.
-- [ ] **Bước 13**: Cập nhật `auth.js` và `storage.js` để tự động đẩy và kéo dữ liệu đồng bộ với Cloud.
-- [ ] **Bước 14**: Thiết lập cấu hình Vercel (`vercel.json`, `package.json`), khởi tạo Git repository và hoàn thiện quy trình đưa lên `haisonflashcard.vercel.app`.
+- [x] **Bước 12**: Xây dựng Dịch vụ Đồng bộ Đám mây (`js/services/cloudSync.js`) kết nối Firebase Firestore.
+- [x] **Bước 13**: Cập nhật `auth.js` và `storage.js` hỗ trợ tự động kéo/đẩy dữ liệu đồng bộ với Cloud.
+- [x] **Bước 14**: Thiết lập cấu hình Vercel (`vercel.json`), khởi tạo Git repository và đẩy lên GitHub `haison08/haisonflashcard`.
+- [x] **Bước 15**: Tự động thao tác trên tab Firebase Console: tạo project `haisonflashcard`, bật Cloud Firestore và tạo Web App.
+- [x] **Bước 16**: Trích xuất `firebaseConfig` và nhúng trực tiếp vào `js/services/cloudSync.js`.
+- [x] **Bước 17**: Push commit lên GitHub để Vercel tự động triển khai và kiểm tra đồng bộ tài khoản xuyên suốt các máy.
 
 ---
 
 *Tài liệu này là kim chỉ nam để thực hiện toàn bộ ứng dụng web flashcard học tiếng Anh LinguaFlash.*
+
+
 
 
