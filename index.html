@@ -75,6 +75,11 @@
 
   <!-- Main Content Sections -->
   <main class="app-main">
+    <!-- View 0: Strict Guest Auth Lock / Paywall (Bắt buộc đăng nhập) -->
+    <section class="view-section" id="view-guest-lock">
+      <!-- Sẽ được render bởi app.js khi chưa đăng nhập -->
+    </section>
+
     <!-- View 1: Decks Library -->
     <section class="view-section active" id="view-decks" aria-labelledby="section-decks-title">
       <!-- Sẽ được render bởi deckManager.js -->
@@ -113,6 +118,6 @@
   </footer>
 
   <!-- App Main Entry Point (ES6 Module) -->
-  <script type="module" src="js/app.js?v=3.3"></script>
+  <script type="module" src="js/app.js?v=3.4"></script>
 </body>
 </html>

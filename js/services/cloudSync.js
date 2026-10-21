@@ -79,20 +79,25 @@ class CloudSyncService {
   }
 
   /**
-   * Đẩy dữ liệu người dùng lên Cloud Firestore
+   * Đẩy dữ liệu người dùng lên Cloud Firestore (Đảm bảo đa thiết bị truy cập được 100%)
    */
   async uploadUserToCloud(user) {
-    if (!this.isConfigured || !this.firestoreDb || !user) return false;
+    if (!user) return false;
+    if (!this.isConfigured || !this.firestoreDb) {
+      await this.initFirebase();
+    }
+    if (!this.isConfigured || !this.firestoreDb) return false;
 
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      const userRef = doc(this.firestoreDb, 'users', user.id);
+      const cleanEmail = user.email.toLowerCase().trim();
 
-      // Lưu trữ an toàn lên Firestore
+      // 1. Lưu bản ghi đầy đủ trong collection `users`
+      const userRef = doc(this.firestoreDb, 'users', user.id);
       await setDoc(userRef, {
         id: user.id,
         name: user.name,
-        email: user.email.toLowerCase(),
+        email: cleanEmail,
         password: user.password,
         avatar: user.avatar || '🧑‍🎓',
         createdAt: user.createdAt || Date.now(),
@@ -103,6 +108,17 @@ class CloudSyncService {
         logs: user.logs || []
       }, { merge: true });
 
+      // 2. Lưu chỉ mục tra cứu siêu tốc trong `users_lookup` theo Email (O(1) Direct Lookup)
+      const lookupRef = doc(this.firestoreDb, 'users_lookup', cleanEmail);
+      await setDoc(lookupRef, {
+        userId: user.id,
+        name: user.name,
+        email: cleanEmail,
+        password: user.password,
+        updatedAt: Date.now()
+      }, { merge: true });
+
+      console.log('☁️ Đã đồng bộ tài khoản lên Cloud Firestore thành công:', cleanEmail);
       return true;
     } catch (e) {
       console.error('Lỗi đẩy dữ liệu lên Cloud:', e);
@@ -114,16 +130,50 @@ class CloudSyncService {
    * Tìm kiếm và tải tài khoản từ Cloud Firestore khi đăng nhập trên máy mới
    */
   async findUserOnCloud(emailOrUsername, password) {
+    if (!this.isConfigured || !this.firestoreDb) {
+      await this.initFirebase();
+    }
     if (!this.isConfigured || !this.firestoreDb) return null;
 
-    try {
-      const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      const usersRef = collection(this.firestoreDb, 'users');
-      const qEmail = query(usersRef, where('email', '==', emailOrUsername.trim().toLowerCase()));
+    const queryStr = emailOrUsername.trim().toLowerCase();
 
+    try {
+      const { doc, getDoc, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+      // 1. Tra cứu trực tiếp siêu tốc qua collection `users_lookup` theo Email
+      try {
+        const lookupRef = doc(this.firestoreDb, 'users_lookup', queryStr);
+        const lookupSnap = await getDoc(lookupRef);
+        if (lookupSnap.exists()) {
+          const lData = lookupSnap.data();
+          if (lData.password !== password) {
+            return { error: 'wrong-password' };
+          }
+          // Tải bản ghi dữ liệu đầy đủ từ collection `users`
+          const fullUserRef = doc(this.firestoreDb, 'users', lData.userId);
+          const fullSnap = await getDoc(fullUserRef);
+          if (fullSnap.exists()) {
+            return fullSnap.data();
+          }
+          return {
+            id: lData.userId,
+            name: lData.name,
+            email: lData.email,
+            password: lData.password,
+            decks: [],
+            settings: {},
+            streak: { current: 0, longest: 0, lastDate: null }
+          };
+        }
+      } catch (errLookup) {
+        console.warn('Lỗi tra cứu nhanh users_lookup, chuyển sang query:', errLookup);
+      }
+
+      // 2. Dự phòng: Query tìm theo email hoặc tên trong collection `users`
+      const usersRef = collection(this.firestoreDb, 'users');
+      const qEmail = query(usersRef, where('email', '==', queryStr));
       let snapshot = await getDocs(qEmail);
 
-      // Nếu không khớp email, thử tìm theo tên
       if (snapshot.empty) {
         const qName = query(usersRef, where('name', '==', emailOrUsername.trim()));
         snapshot = await getDocs(qName);

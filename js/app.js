@@ -55,6 +55,9 @@ class App {
 
     this.bindGlobalEvents();
 
+    // Khởi tạo hiển thị ban đầu (Chặn Guest ngay từ đầu nếu chưa đăng nhập)
+    this.refreshCurrentView();
+
     // Lắng nghe thay đổi trạng thái đăng nhập
     auth.onAuthStateChanged((user) => {
       this.renderUserHeader();
@@ -120,6 +123,28 @@ class App {
   }
 
   refreshCurrentView() {
+    const user = auth.getCurrentUser();
+    const guestLock = document.getElementById('view-guest-lock');
+
+    if (!user) {
+      // Ẩn tất cả các view học tập khi chưa đăng nhập
+      document.querySelectorAll('.view-section').forEach(sec => {
+        sec.classList.remove('active');
+      });
+      if (guestLock) {
+        guestLock.style.display = 'block';
+        guestLock.classList.add('active');
+        this.renderGuestLockScreen();
+      }
+      return;
+    }
+
+    // Đã đăng nhập: Ẩn màn hình khóa
+    if (guestLock) {
+      guestLock.style.display = 'none';
+      guestLock.classList.remove('active');
+    }
+
     if (this.currentTab === 'decks') {
       this.deckManager.render();
     } else if (this.currentTab === 'stats') {
@@ -133,6 +158,108 @@ class App {
         this.cardViewer.startSession(decks[0].id);
       }
     }
+  }
+
+  renderGuestLockScreen() {
+    const lockView = document.getElementById('view-guest-lock');
+    if (!lockView) return;
+
+    const cfg = payment.getConfig();
+    const qrUrl = `https://img.vietqr.io/image/${cfg.bankId || 'TCB'}-${cfg.accountNo || '6888200808'}-compact2.png?amount=20000&addInfo=LFTEST&accountName=${encodeURIComponent(cfg.accountName || 'NGUYEN PHUC HAI SON')}`;
+
+    lockView.innerHTML = `
+      <div class="guest-lock-container">
+        <div class="guest-lock-hero">
+          <div class="guest-lock-badge">
+            <span>🔒</span> Yêu Cầu Tài Khoản Để Học Tập
+          </div>
+          <h2 class="guest-lock-title">
+            Chào Mừng Bạn Đến Với LinguaFlash!
+          </h2>
+          <p class="guest-lock-desc">
+            Hệ thống yêu cầu <strong>kích hoạt tài khoản (20.000 VNĐ)</strong> để bảo vệ lộ trình học, cá nhân hóa bộ từ vựng, tính toán chu kỳ lặp lại ngắt quãng (SRS Leitner) và đồng bộ xuyên suốt mọi thiết bị.
+          </p>
+
+          <!-- Khu vực Quét Mã Chuyển Tiền Test Trực Tiếp (Techcombank) -->
+          <div class="guest-lock-grid">
+            <div style="text-align: center;">
+              <div class="vietqr-box" style="margin: 0 auto; max-width: 240px; background: #ffffff; padding: 10px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+                <img src="${qrUrl}" alt="VietQR Techcombank Test" style="width: 100%; border-radius: 8px; display: block;" />
+                <div style="font-size: 0.72rem; color: #475569; margin-top: 6px; font-weight: 600;">
+                  Quét mã trên App Techcombank hoặc ngân hàng
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: #10b981; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+                <span class="pulsing-radar-dot"></span> Cổng Thanh Toán Techcombank Trực Tiếp
+              </div>
+
+              <div class="payment-detail-card" style="margin-bottom: 1rem;">
+                <div class="payment-row">
+                  <span class="payment-row-label">Ngân hàng:</span>
+                  <span class="payment-row-val"><strong>${this.escapeHtml(cfg.bankName || 'Techcombank (TCB)')}</strong></span>
+                </div>
+                <div class="payment-row">
+                  <span class="payment-row-label">Số tài khoản:</span>
+                  <span class="payment-row-val">
+                    <strong>${this.escapeHtml(cfg.accountNo || '6888200808')}</strong>
+                    <button class="copy-badge" id="btn-copy-lock-stk" data-copy="${cfg.accountNo || '6888200808'}">Sao chép</button>
+                  </span>
+                </div>
+                <div class="payment-row">
+                  <span class="payment-row-label">Chủ tài khoản:</span>
+                  <span class="payment-row-val">${this.escapeHtml(cfg.accountName || 'NGUYEN PHUC HAI SON')}</span>
+                </div>
+                <div class="payment-row">
+                  <span class="payment-row-label">Số tiền:</span>
+                  <span class="payment-row-val" style="color: #10b981; font-weight: 700; font-size: 1rem;">
+                    20.000 VNĐ
+                  </span>
+                </div>
+              </div>
+
+              <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+                ⚡ Sau khi quét mã chuyển tiền, hãy bấm nút đăng ký tài khoản bên dưới để hệ thống kích hoạt tự động trong 1 giây!
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; justify-content: center; gap: 0.85rem; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-lg" id="btn-guest-register-now" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); font-weight: 700; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
+              🚀 Đăng Ký Tài Khoản & Kích Hoạt (20.000đ)
+            </button>
+            <button class="btn btn-outline btn-lg" id="btn-guest-login-now">
+              🔑 Tôi Đã Có Tài Khoản (Đăng Nhập)
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('btn-guest-register-now')?.addEventListener('click', () => {
+      audio.playClick();
+      this.authModal.open('register');
+    });
+
+    document.getElementById('btn-guest-login-now')?.addEventListener('click', () => {
+      audio.playClick();
+      this.authModal.open('login');
+    });
+
+    document.getElementById('btn-copy-lock-stk')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      const text = btn.getAttribute('data-copy');
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+          const old = btn.textContent;
+          btn.textContent = '✓ Đã chép!';
+          setTimeout(() => btn.textContent = old, 1500);
+        });
+      }
+    });
   }
 
   applyTheme(theme) {
@@ -154,6 +281,14 @@ class App {
   }
 
   switchTab(tabId) {
+    const user = auth.getCurrentUser();
+    if (!user) {
+      audio.playWrong();
+      this.showToast('🔒 Vui lòng đăng nhập hoặc kích hoạt tài khoản để học tập!', 'warning');
+      this.authModal.open('register');
+      return;
+    }
+
     this.currentTab = tabId;
 
     // Cập nhật trạng thái nút tab
@@ -175,7 +310,6 @@ class App {
     if (tabId === 'decks') {
       this.deckManager.render();
     } else if (tabId === 'study') {
-      // Nếu chưa có phiên học nào đang chạy, bắt đầu với bộ từ đầu tiên
       if (!this.cardViewer.currentDeck) {
         const decks = storage.getDecks();
         if (decks.length > 0) {

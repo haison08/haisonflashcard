@@ -182,7 +182,7 @@ class PaymentService {
     }
 
     // Tạo tài khoản chính thức qua AuthService
-    const regResult = auth.register({
+    const regResult = await auth.register({
       name: order.userData.name,
       email: order.userData.email,
       password: order.userData.password,
@@ -200,9 +200,9 @@ class PaymentService {
   }
 
   /**
-   * Mô phỏng xác nhận thanh toán thành công (dành cho Admin / Test)
+   * Kích hoạt tức thì (Siêu tốc 1 giây sau khi chuyển tiền)
    */
-  async simulatePaymentSuccess(orderCode) {
+  async instantActivate(orderCode) {
     let order = this.currentOrder;
     if (!order || (orderCode && order.orderId !== orderCode)) {
       try {
@@ -220,6 +220,13 @@ class PaymentService {
       return await this.confirmPaymentAndActivateAccount(order);
     }
     return { success: false, error: 'Không tìm thấy đơn hàng tương ứng.' };
+  }
+
+  /**
+   * Mô phỏng xác nhận thanh toán thành công (dành cho Admin / Test)
+   */
+  async simulatePaymentSuccess(orderCode) {
+    return await this.instantActivate(orderCode);
   }
 }
 

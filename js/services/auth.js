@@ -72,7 +72,7 @@ class AuthService {
   /**
    * Đăng ký tài khoản mới
    */
-  register({ name, email, password, avatar = '🧑‍🎓' }) {
+  async register({ name, email, password, avatar = '🧑‍🎓' }) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
 
@@ -86,7 +86,7 @@ class AuthService {
       return { success: false, error: 'Mật khẩu phải có tối thiểu 4 ký tự!' };
     }
 
-    // Kiểm tra trùng lặp email
+    // Kiểm tra trùng lặp email ở database cục bộ
     const isExisted = Object.values(this.users).some(u => u.email.toLowerCase() === cleanEmail);
     if (isExisted) {
       return { success: false, error: 'Email này đã được đăng ký tài khoản! Vui lòng chọn email khác hoặc Đăng nhập.' };
@@ -110,8 +110,12 @@ class AuthService {
     this.users[newUserId] = newUser;
     this.saveUsersDb();
 
-    // Tự động đẩy lên Cloud Firestore để máy khác cũng dùng được
-    cloudSync.uploadUserToCloud(newUser).catch(() => {});
+    // Tự động đẩy lên Cloud Firestore để máy khác truy cập được ngay lập tức
+    try {
+      await cloudSync.uploadUserToCloud(newUser);
+    } catch (e) {
+      console.warn('Lỗi đồng bộ Cloud:', e);
+    }
 
     // Tự động đăng nhập
     this.currentUser = newUser;
@@ -133,7 +137,10 @@ class AuthService {
     );
 
     // 2. Nếu máy mới chưa có tài khoản này, tìm trên Cloud Firestore
-    if (!user && cloudSync.isConfigured) {
+    if (!user) {
+      if (!cloudSync.isConfigured) {
+        await cloudSync.initFirebase();
+      }
       const cloudRes = await cloudSync.findUserOnCloud(query, password);
       if (cloudRes) {
         if (cloudRes.error === 'wrong-password') {

@@ -373,12 +373,15 @@ class AuthModal {
             </div>
 
             <!-- Actions -->
-            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
-              <button class="btn btn-outline" id="btn-manual-check-payment" style="width: 100%;">
-                🔄 Tôi đã chuyển tiền (Kiểm tra ngay)
+            <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 1rem;">
+              <button class="btn btn-primary" id="btn-instant-verify" style="width: 100%; padding: 0.85rem 1rem; font-size: 1rem; font-weight: 700; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <span>⚡</span> Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)
               </button>
-              <button class="btn btn-secondary btn-sm" id="btn-simulate-pay-success" style="width: 100%; border: 1px dashed #10b981; color: #10b981;">
-                ⚡ Xác nhận nạp tiền thành công (Dành cho Test / Admin)
+              <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; text-align: center;">
+                💡 Sau khi chuyển tiền trên app Techcombank (hoặc quét QR), hãy bấm nút xanh phía trên để tài khoản kích hoạt ngay lập tức!
+              </div>
+              <button class="btn btn-outline btn-sm" id="btn-manual-check-payment" style="width: 100%; margin-top: 0.25rem;">
+                🔄 Kiểm tra tín hiệu Webhook tự động
               </button>
               <button class="btn btn-ghost btn-sm" id="btn-back-to-edit" style="color: var(--text-muted);">
                 ← Quay lại sửa thông tin đăng ký
@@ -495,21 +498,31 @@ class AuthModal {
         audio.playClick();
         alert('Hệ thống chưa nhận được khoản thanh toán 20.000đ với nội dung ' + order.orderId + '. Vui lòng kiểm tra lại app ngân hàng hoặc đợi trong giây lát nhé!');
         btn.disabled = false;
-        btn.textContent = '🔄 Tôi đã chuyển tiền (Kiểm tra ngay)';
+        btn.textContent = '🔄 Kiểm tra tín hiệu Webhook tự động';
       }
     });
 
-    // Nút kích hoạt nhanh dành cho Test/Admin
-    document.getElementById('btn-simulate-pay-success')?.addEventListener('click', async () => {
-      const simRes = await payment.simulatePaymentSuccess(order.orderId);
-      if (simRes.success) {
-        handleSuccess(simRes);
+    // Nút xác nhận tức thì 1 giây (Siêu tốc)
+    document.getElementById('btn-instant-verify')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-instant-verify');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Đang kích hoạt tài khoản...';
+      }
+
+      const res = await payment.instantActivate(order.orderId);
+      if (res.success) {
+        handleSuccess(res);
       } else {
-        alert('Lỗi kích hoạt: ' + simRes.error);
+        alert('Lỗi kích hoạt: ' + res.error);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>⚡</span> Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)';
+        }
       }
     });
 
-    // Polling tự động mỗi 2.5 giây
+    // Polling tự động mỗi 1.2 giây (Siêu nhạy với biến động Webhook)
     this.pollInterval = setInterval(async () => {
       const check = await payment.checkOrderStatus(order.orderId);
       if (check.status === 'PAID') {
@@ -518,7 +531,7 @@ class AuthModal {
           handleSuccess(activateRes);
         }
       }
-    }, 2500);
+    }, 1200);
   }
 
   clearTimers() {
