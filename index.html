@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinguaFlash - Học Tiếng Anh Thông Minh Với Flashcard 3D & SRS</title>
+  <meta name="description" content="Ứng dụng web flashcard học từ vựng tiếng Anh hiện đại: card lật 3D sống động, phát âm chuẩn US/UK, nhận diện giọng nói kiểm tra phát âm qua microphone, thuật toán ghi nhớ Spaced Repetition (SRS) và các bài kiểm tra trắc nghiệm thú vị.">
+  <meta name="keywords" content="flashcard tiếng anh, học từ vựng tiếng anh, ielts vocabulary, toeic, spaced repetition, srs leitner, phát âm tiếng anh">
+  <meta name="author" content="LinguaFlash Team">
+
+  <!-- Favicon Emoji -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/flashcard.css">
+  <link rel="stylesheet" href="css/quiz.css">
+  <link rel="stylesheet" href="css/stats.css">
+</head>
+<body>
+
+  <!-- App Header & Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <!-- Brand Logo -->
+      <div class="brand" id="brand-logo-btn" title="Về trang chủ bộ từ">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <h1>LinguaFlash</h1>
+          <span>Smart English Flashcards</span>
+        </div>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab-btn active" data-tab="decks" id="nav-tab-decks" aria-controls="view-decks">
+          <span class="tab-icon">📚</span>
+          <span>Bộ từ vựng</span>
+        </button>
+        <button class="tab-btn" data-tab="study" id="nav-tab-study" aria-controls="view-study">
+          <span class="tab-icon">🎴</span>
+          <span>Học Flashcard</span>
+        </button>
+        <button class="tab-btn" data-tab="quiz" id="nav-tab-quiz" aria-controls="view-quiz">
+          <span class="tab-icon">🎯</span>
+          <span>Luyện tập & Quiz</span>
+        </button>
+        <button class="tab-btn" data-tab="stats" id="nav-tab-stats" aria-controls="view-stats">
+          <span class="tab-icon">📊</span>
+          <span>Thống kê</span>
+        </button>
+      </nav>
+
+      <!-- Header Actions (Streak, Theme, Settings, User Account) -->
+      <div class="header-actions">
+        <div class="streak-pill" id="streak-counter-pill" title="Chuỗi ngày học liên tục (Nhấn để xem thống kê)">
+          <span class="flame-icon">🔥</span>
+          <span>0</span>
+        </div>
+        <button class="btn-icon" id="btn-theme-toggle" title="Chuyển chế độ Sáng / Tối" aria-label="Toggle Theme">
+          ☀️
+        </button>
+        <button class="btn-icon" id="btn-settings-open" title="Cài đặt giọng đọc & âm thanh" aria-label="Settings">
+          ⚙️
+        </button>
+
+        <!-- User Profile Chip or Login/Register Button -->
+        <div id="user-header-container"></div>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- Main Content Sections -->
+  <main class="app-main">
+    <!-- View 1: Decks Library -->
+    <section class="view-section active" id="view-decks" aria-labelledby="section-decks-title">
+      <!-- Sẽ được render bởi deckManager.js -->
+    </section>
+
+    <!-- View 2: 3D Flashcard Study Session -->
+    <section class="view-section" id="view-study" aria-labelledby="section-study-title">
+      <!-- Sẽ được render bởi cardViewer.js -->
+    </section>
+
+    <!-- View 3: Quiz & Interactive Games -->
+    <section class="view-section" id="view-quiz" aria-labelledby="section-quiz-title">
+      <!-- Sẽ được render bởi quizMode.js -->
+    </section>
+
+    <!-- View 4: Progress & Statistics Dashboard -->
+    <section class="view-section" id="view-stats" aria-labelledby="section-stats-title">
+      <!-- Sẽ được render bởi statsView.js -->
+    </section>
+  </main>
+
+  <!-- Modals & Dynamic Containers -->
+  <div id="app-settings-modal-wrap"></div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+      <div>
+        <strong>LinguaFlash</strong> &copy; 2026 • Ứng dụng flashcard học tiếng Anh thông minh với SRS & Web Speech API.
+      </div>
+      <div style="color: var(--text-muted); font-size: 0.8rem;">
+        Phím tắt: <kbd class="kbd">Space</kbd> Lật thẻ • <kbd class="kbd">1-4</kbd> Đánh giá nhớ • <kbd class="kbd">A</kbd> Nghe phát âm • <kbd class="kbd">M</kbd> Luyện nói
+      </div>
+    </div>
+  </footer>
+
+  <!-- App Main Entry Point (ES6 Module) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+/**
+ * auth.js - Dịch vụ Xác thực, Quản lý Tài khoản & Phân tách Dữ liệu Độc lập cho từng người dùng
+ */
+
+import { DEFAULT_DECKS } from '../data/defaultDecks.js';
+import { cloudSync } from './cloudSync.js';
+
+const STORAGE_KEYS = {
+  USERS_DB: 'linguaflash_users_db',
+  CURRENT_SESSION: 'linguaflash_current_session'
+};
+
+
+const DEFAULT_SETTINGS = {
+  theme: 'dark',
+  accent: 'en-US',
+  speechRate: 1.0,
+  autoPlayAudio: false,
+  soundEffects: true
+};
+
+class AuthService {
+  constructor() {
+    this.users = {};
+    this.currentUser = null;
+    this.authListeners = [];
+    this.init();
+  }
+
+  init() {
+    // Đọc danh sách người dùng
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.USERS_DB);
+      if (data) {
+        this.users = JSON.parse(data);
+      }
+    } catch (e) {
+      console.error('Lỗi khi đọc users_db:', e);
+      this.users = {};
+    }
+
+    // Nếu chưa có tài khoản nào trong hệ thống, tự động tạo 1 tài khoản Demo ban đầu
+    if (Object.keys(this.users).length === 0) {
+      const demoId = 'user_demo';
+      const todayStr = new Date().toISOString().split('T')[0];
+      this.users[demoId] = {
+        id: demoId,
+        name: 'Học viên Demo',
+        email: 'demo@linguaflash.com',
+        password: 'demo',
+        avatar: '🧑‍🎓',
+        createdAt: Date.now(),
+        decks: JSON.parse(JSON.stringify(DEFAULT_DECKS)),
+        settings: { ...DEFAULT_SETTINGS },
+        streak: { current: 1, longest: 1, lastDate: todayStr },
+        logs: [
+          {
+            timestamp: Date.now(),
+            dateStr: todayStr,
+            cardId: 'ielts-1',
+            deckId: 'deck-ielts',
+            rating: 3,
+            isCorrect: true,
+            mode: 'flashcard'
+          }
+        ]
+      };
+      this.saveUsersDb();
+    }
+
+    // Khôi phục phiên làm việc (Session)
+    try {
+      const sessionUserId = localStorage.getItem(STORAGE_KEYS.CURRENT_SESSION);
+      if (sessionUserId && this.users[sessionUserId]) {
+        this.currentUser = this.users[sessionUserId];
+      } else {
+        // Mặc định đăng nhập tài khoản demo nếu chưa ai đăng nhập
+        const firstUserId = Object.keys(this.users)[0];
+        if (firstUserId) {
+          this.currentUser = this.users[firstUserId];
+          localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, firstUserId);
+        }
+      }
+    } catch (e) {
+      console.error('Lỗi khôi phục session:', e);
+    }
+  }
+
+  saveUsersDb() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(this.users));
+    } catch (e) {
+      console.error('Lỗi khi lưu users_db:', e);
+    }
+  }
+
+  isLoggedIn() {
+    return !!this.currentUser;
+  }
+
+  getCurrentUser() {
+    return this.currentUser;
+  }
+
+  /**
+   * Đăng ký tài khoản mới
+   */
+  register({ name, email, password, avatar = '🧑‍🎓' }) {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+
+    if (!cleanName) {
+      return { success: false, error: 'Vui lòng nhập họ và tên của bạn!' };
+    }
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      return { success: false, error: 'Email không hợp lệ!' };
+    }
+    if (!password || password.length < 4) {
+      return { success: false, error: 'Mật khẩu phải có tối thiểu 4 ký tự!' };
+    }
+
+    // Kiểm tra trùng lặp email
+    const isExisted = Object.values(this.users).some(u => u.email.toLowerCase() === cleanEmail);
+    if (isExisted) {
+      return { success: false, error: 'Email này đã được đăng ký tài khoản! Vui lòng chọn email khác hoặc Đăng nhập.' };
+    }
+
+    const newUserId = 'user_' + Date.now();
+    const newUser = {
+      id: newUserId,
+      name: cleanName,
+      email: cleanEmail,
+      password: password,
+      avatar: avatar || '🧑‍🎓',
+      createdAt: Date.now(),
+      // Khởi tạo bản sao độc lập của các bộ từ vựng chuẩn cho người dùng này
+      decks: JSON.parse(JSON.stringify(DEFAULT_DECKS)),
+      settings: { ...DEFAULT_SETTINGS },
+      streak: { current: 0, longest: 0, lastDate: null },
+      logs: []
+    };
+
+    this.users[newUserId] = newUser;
+    this.saveUsersDb();
+
+    // Tự động đẩy lên Cloud Firestore để máy khác cũng dùng được
+    cloudSync.uploadUserToCloud(newUser).catch(() => {});
+
+    // Tự động đăng nhập
+    this.currentUser = newUser;
+    localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, newUserId);
+
+    this.notifyAuthChange();
+    return { success: true, user: newUser };
+  }
+
+  /**
+   * Đăng nhập tài khoản (Kiểm tra Local trước, nếu máy mới thì kéo từ Cloud về)
+   */
+  async login(emailOrUsername, password) {
+    const query = emailOrUsername.trim().toLowerCase();
+
+    // 1. Kiểm tra tài khoản trong database cục bộ của máy
+    let user = Object.values(this.users).find(u => 
+      u.email.toLowerCase() === query || u.name.toLowerCase() === query
+    );
+
+    // 2. Nếu máy mới chưa có tài khoản này, tìm trên Cloud Firestore
+    if (!user && cloudSync.isConfigured) {
+      const cloudRes = await cloudSync.findUserOnCloud(query, password);
+      if (cloudRes) {
+        if (cloudRes.error === 'wrong-password') {
+          return { success: false, error: 'Mật khẩu không chính xác! Vui lòng thử lại.' };
+        }
+        // Lưu tài khoản từ Cloud về máy này
+        user = cloudRes;
+        this.users[user.id] = user;
+        this.saveUsersDb();
+      }
+    }
+
+    if (!user) {
+      return { success: false, error: 'Không tìm thấy tài khoản với email hoặc tên này!' };
+    }
+
+    if (user.password !== password) {
+      return { success: false, error: 'Mật khẩu không chính xác! Vui lòng thử lại.' };
+    }
+
+    this.currentUser = user;
+    localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, user.id);
+
+    this.notifyAuthChange();
+    return { success: true, user: user };
+  }
+
+  /**
+   * Đăng xuất
+   */
+  logout() {
+    this.currentUser = null;
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
+    this.notifyAuthChange();
+  }
+
+  /**
+   * Lưu cập nhật dữ liệu của user hiện tại và đẩy lên Cloud
+   */
+  saveCurrentUser(updates = {}) {
+    if (!this.currentUser) return false;
+    Object.assign(this.currentUser, updates);
+    this.users[this.currentUser.id] = this.currentUser;
+    this.saveUsersDb();
+
+    // Tự động đồng bộ lên Cloud
+    cloudSync.uploadUserToCloud(this.currentUser).catch(() => {});
+    return true;
+  }
+
+  /**
+   * Đăng ký lắng nghe thay đổi trạng thái Auth
+   */
+  onAuthStateChanged(callback) {
+    if (typeof callback === 'function') {
+      this.authListeners.push(callback);
+    }
+  }
+
+  notifyAuthChange() {
+    this.authListeners.forEach(cb => {
+      try {
+        cb(this.currentUser);
+      } catch (e) {
+        console.error('Lỗi callback auth listener:', e);
+      }
+    });
+  }
+
+  getAllUsersList() {
+    return Object.values(this.users).map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      avatar: u.avatar || '🧑‍🎓',
+      streak: u.streak ? u.streak.current : 0,
+      cardsCount: (u.decks || []).reduce((acc, d) => acc + (d.cards ? d.cards.length : 0), 0)
+    }));
+  }
+}
+
+export const auth = new AuthService();
