@@ -2,16 +2,17 @@
  * app.js - Main Application Coordinator & Router with Auth Integration
  */
 
-import { storage } from './services/storage.js';
-import { audio } from './services/audio.js';
-import { auth } from './services/auth.js';
-import { cloudSync } from './services/cloudSync.js';
-import { authModal } from './components/authModal.js';
-import { cardViewer } from './components/cardViewer.js';
-import { quizMode } from './components/quizMode.js';
-import { deckManager } from './components/deckManager.js';
-import { statsView } from './components/statsView.js';
-
+import { storage } from './services/storage.js?v=2.4';
+import { audio } from './services/audio.js?v=2.4';
+import { auth } from './services/auth.js?v=2.4';
+import { srs } from './services/srs.js?v=2.4';
+import { speechRec } from './services/speechRec.js?v=2.4';
+import { cloudSync } from './services/cloudSync.js?v=2.4';
+import { authModal } from './components/authModal.js?v=2.4';
+import { cardViewer } from './components/cardViewer.js?v=2.4';
+import { quizMode } from './components/quizMode.js?v=2.4';
+import { deckManager } from './components/deckManager.js?v=2.4';
+import { statsView } from './components/statsView.js?v=2.4';
 
 class App {
   constructor() {
@@ -21,6 +22,12 @@ class App {
     this.deckManager = deckManager;
     this.statsView = statsView;
     this.authModal = authModal;
+    this.storage = storage;
+    this.auth = auth;
+    this.srs = srs;
+    this.audio = audio;
+    this.speechRec = speechRec;
+    this.cloudSync = cloudSync;
   }
 
   init() {
@@ -463,8 +470,26 @@ class App {
 
 export const app = new App();
 
-// Khởi chạy khi DOM sẵn sàng
-document.addEventListener('DOMContentLoaded', () => {
+// Khởi chạy an toàn và gắn các service lên window
+function startApp() {
   window.app = app;
+  window.storageService = storage;
+  window.authService = auth;
+  window.srsService = srs;
+  window.audioService = audio;
+  window.speechRecService = speechRec;
+  window.cloudSyncService = cloudSync;
+  window.cardViewer = cardViewer;
+  window.quizMode = quizMode;
+  window.deckManager = deckManager;
+  window.statsView = statsView;
+  window.authModal = authModal;
+
   app.init();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
+}

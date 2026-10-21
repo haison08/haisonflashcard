@@ -394,14 +394,11 @@ class AuthModal {
     container.querySelectorAll('[data-switch-user-id]').forEach(btn => {
       btn.addEventListener('click', () => {
         const targetUserId = btn.getAttribute('data-switch-user-id');
-        const targetUser = auth.users[targetUserId];
-        if (targetUser) {
-          auth.currentUser = targetUser;
-          localStorage.setItem('linguaflash_current_session', targetUserId);
-          auth.notifyAuthChange();
+        const success = auth.switchUser(targetUserId);
+        if (success) {
           audio.playSuccess();
           closeModal();
-          if (window.app) window.app.onUserLoggedIn(targetUser);
+          if (window.app) window.app.onUserLoggedIn(auth.currentUser);
         }
       });
     });

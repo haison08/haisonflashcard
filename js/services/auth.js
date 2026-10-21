@@ -204,6 +204,18 @@ class AuthService {
   }
 
   /**
+   * Chuyển đổi nhanh giữa các tài khoản đã lưu trên máy
+   */
+  switchUser(targetUserId) {
+    const targetUser = this.users[targetUserId];
+    if (!targetUser) return false;
+    this.currentUser = targetUser;
+    localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, targetUserId);
+    this.notifyAuthChange();
+    return true;
+  }
+
+  /**
    * Lưu cập nhật dữ liệu của user hiện tại và đẩy lên Cloud
    */
   saveCurrentUser(updates = {}) {

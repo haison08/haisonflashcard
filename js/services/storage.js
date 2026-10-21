@@ -228,6 +228,10 @@ class StorageService {
     return streak;
   }
 
+  getStreak() {
+    return this.streak || { current: 0, longest: 0, lastDate: null };
+  }
+
   // ===== IMPORT & EXPORT =====
 
   exportAllDataJSON() {

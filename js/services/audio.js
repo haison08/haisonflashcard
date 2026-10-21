@@ -12,6 +12,10 @@ class AudioService {
     this.initVoices();
   }
 
+  isTTSSupported() {
+    return !!(window.speechSynthesis);
+  }
+
   // Khởi tạo danh sách giọng nói của hệ thống
   initVoices() {
     if (!this.synth) return;
