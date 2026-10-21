@@ -165,7 +165,7 @@ class App {
     if (!lockView) return;
 
     const cfg = payment.getConfig();
-    const qrUrl = `https://img.vietqr.io/image/${cfg.bankId || 'VietinBank'}-${cfg.accountNo || '106880869088'}-compact2.png?amount=20000&addInfo=LFTEST&accountName=${encodeURIComponent(cfg.accountName || 'NGUYEN PHUC HAI SON')}`;
+    const qrUrl = `https://img.vietqr.io/image/${cfg.bankId || 'VietinBank'}-${cfg.accountNo || '106880869088'}-compact2.png?amount=20000&addInfo=${encodeURIComponent('SEVQR LFTEST')}&accountName=${encodeURIComponent(cfg.accountName || 'NGUYEN PHUC HAI SON')}`;
 
     lockView.innerHTML = `
       <div class="guest-lock-container">

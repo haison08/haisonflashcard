@@ -355,8 +355,8 @@ class AuthModal {
               <div class="payment-row" style="background: rgba(245, 158, 11, 0.1); padding: 6px 10px; border-radius: var(--radius-sm); border: 1px dashed #f59e0b;">
                 <span class="payment-row-label" style="color: #f59e0b; font-weight: 700;">Nội dung CK (bắt buộc):</span>
                 <span class="payment-row-val" style="color: #f59e0b; font-size: 1.1rem; font-family: var(--font-mono);">
-                  <span>${order.orderId}</span>
-                  <button class="copy-badge" data-copy="${order.orderId}" style="background: #f59e0b; color: #ffffff; border-color: #f59e0b;">Sao chép mã</button>
+                  <span>SEVQR ${order.orderId}</span>
+                  <button class="copy-badge" data-copy="SEVQR ${order.orderId}" style="background: #f59e0b; color: #ffffff; border-color: #f59e0b;">Sao chép mã</button>
                 </span>
               </div>
             </div>

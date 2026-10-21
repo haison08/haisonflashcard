@@ -110,14 +110,15 @@ class PaymentService {
   }
 
   /**
-   * Tạo link ảnh mã VietQR chuẩn quốc tế
+   * Tạo link ảnh mã VietQR chuẩn quốc tế (có tiền tố SEVQR để SePay nhận diện 100%)
    */
   getVietQRUrl(order) {
     const bank = order.bankId || this.config.bankId;
     const acc = order.accountNo || this.config.accountNo;
     const template = this.config.template || 'compact2';
     const amount = order.amount || this.config.amount;
-    const memo = encodeURIComponent(order.orderId);
+    const transferMemo = `SEVQR ${order.orderId}`;
+    const memo = encodeURIComponent(transferMemo);
     const name = encodeURIComponent(order.accountName || this.config.accountName);
 
     return `https://img.vietqr.io/image/${bank}-${acc}-${template}.png?amount=${amount}&addInfo=${memo}&accountName=${name}`;

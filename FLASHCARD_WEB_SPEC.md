@@ -204,7 +204,7 @@
   - **Số tài khoản (STK)**: `106880869088`
   - **Chủ tài khoản**: `NGUYEN PHUC HAI SON` (Nguyen Phuc Hai Son)
   - **Số tiền thu phí**: `20.000 VNĐ`
-  - **Cú pháp chuyển khoản**: `LF` + 5 số ngẫu nhiên (Ví dụ: `LF12345`)
+  - **Cú pháp chuyển khoản**: `SEVQR LF` + 5 số ngẫu nhiên (Ví dụ: `SEVQR LF12345`) - Tiền tố `SEVQR` đảm bảo SePay nhận diện 100% không bao giờ trượt.
 
 - **Quy trình Thanh toán & Kích hoạt Tài khoản (VietQR Flow)**:
   1. **Bước 1 (Nhập thông tin)**: Người dùng nhập Họ tên, Email, Mật khẩu và chọn Avatar yêu thích trong Modal Đăng ký -> Bấm **"Tiếp tục kích hoạt (20.000đ)"**.
