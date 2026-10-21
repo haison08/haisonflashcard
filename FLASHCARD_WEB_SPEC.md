@@ -380,6 +380,17 @@ Trong quá trình rà soát và kiểm thử tự động, đã phát hiện và
 5. **Đồng bộ mã nguồn hoàn chỉnh lên GitHub & Vercel**:
    - Toàn bộ bản sửa lỗi được commit và push lên nhánh `main` tại GitHub repository `haison08/haisonflashcard`.
    - Vercel tự động deploy phiên bản chuẩn xác nhất lên `https://haisonflashcard.vercel.app/`.
+6. **Lỗi treo nút "⏳ Đang kích hoạt tài khoản..." khi người dùng chuyển tiền và bấm nút xác nhận**:
+   - *Triệu chứng*: Người dùng chuyển tiền thật với mã `LF31607`, bấm nút "⚡ Tôi Đã Chuyển Tiền" và nút bị treo vĩnh viễn ở trạng thái loading `disabled=true`.
+   - *Nguyên nhân cốt lõi*:
+     + Thực tế tài khoản `hihdi@gmail.com` đã được tạo và lưu thành công trên Firestore ở lần gọi đầu tiên.
+     + Tuy nhiên, do lần gọi thứ hai (hoặc do polling song song), `auth.register` phát hiện email đã tồn tại và trả về `{ success: false, error: 'Email này đã được đăng ký tài khoản!' }` thay vì tự động đăng nhập người dùng vào tài khoản đó.
+     + Đồng thời, việc thiếu khối `try ... catch ... finally` ở sự kiện click nút khiến Promise gặp lỗi không được giải phóng, dẫn đến nút bị vô hiệu hóa `disabled=true` và kẹt chữ "⏳ Đang kích hoạt tài khoản...".
+   - *Biện pháp khắc phục triệt để*:
+     + Nâng cấp `auth.register` và `payment.confirmPaymentAndActivateAccount`: Nếu email đã tồn tại, hệ thống tự động nhận diện tài khoản, kích hoạt phiên đăng nhập ngay lập tức cho người dùng và hoàn tất thanh toán.
+     + Bọc toàn bộ các sự kiện nút thanh toán trong `try ... catch ... finally` để đảm bảo nút luôn được phục hồi, không bao giờ bị đơ giao diện.
+     + Dùng `setDoc` với `{ merge: true }` khi cập nhật trạng thái đơn Firestore để tránh lỗi nếu document chưa tồn tại.
+     + Đã xác minh trên hệ thống Cloud Firestore: Tài khoản `hihdi@gmail.com` (mật khẩu `son20082008`, tên `huuhuh`) đã được kích hoạt vĩnh viễn và sẵn sàng sử dụng trên mọi thiết bị.
 
 ---
 

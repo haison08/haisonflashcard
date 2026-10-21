@@ -482,23 +482,32 @@ class AuthModal {
     };
 
     // Kiểm tra thủ công khi người dùng bấm nút
+    // Kiểm tra tín hiệu Webhook tự động
     document.getElementById('btn-manual-check-payment')?.addEventListener('click', async () => {
       const btn = document.getElementById('btn-manual-check-payment');
-      btn.disabled = true;
-      btn.textContent = 'Đang kiểm tra từ máy chủ...';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Đang kiểm tra từ máy chủ...';
+      }
 
-      const check = await payment.checkOrderStatus(order.orderId);
-      if (check.status === 'PAID') {
-        const activateRes = await payment.confirmPaymentAndActivateAccount(order);
-        if (activateRes.success) {
-          handleSuccess(activateRes);
-          return;
+      try {
+        const check = await payment.checkOrderStatus(order.orderId);
+        if (check.status === 'PAID') {
+          const activateRes = await payment.confirmPaymentAndActivateAccount(order);
+          if (activateRes.success) {
+            handleSuccess(activateRes);
+            return;
+          }
         }
-      } else {
         audio.playClick();
-        alert('Hệ thống chưa nhận được khoản thanh toán 20.000đ với nội dung ' + order.orderId + '. Vui lòng kiểm tra lại app ngân hàng hoặc đợi trong giây lát nhé!');
-        btn.disabled = false;
-        btn.textContent = '🔄 Kiểm tra tín hiệu Webhook tự động';
+        alert('Hệ thống chưa nhận được webhook tự động. Bạn hãy bấm nút màu xanh "⚡ Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)" ở trên để kích hoạt ngay nhé!');
+      } catch (err) {
+        console.error('Lỗi kiểm tra:', err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 Kiểm tra tín hiệu Webhook tự động';
+        }
       }
     });
 
@@ -510,11 +519,18 @@ class AuthModal {
         btn.innerHTML = '<span>⏳</span> Đang kích hoạt tài khoản...';
       }
 
-      const res = await payment.instantActivate(order.orderId);
-      if (res.success) {
-        handleSuccess(res);
-      } else {
-        alert('Lỗi kích hoạt: ' + res.error);
+      try {
+        const res = await payment.instantActivate(order.orderId);
+        if (res.success) {
+          handleSuccess(res);
+          return;
+        } else {
+          alert('Lỗi kích hoạt: ' + res.error);
+        }
+      } catch (err) {
+        console.error('Lỗi khi bấm kích hoạt:', err);
+        alert('Có lỗi xảy ra: ' + err.message);
+      } finally {
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = '<span>⚡</span> Tôi Đã Chuyển Tiền (Xác Nhận Tức Thì 1s)';

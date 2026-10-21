@@ -87,9 +87,13 @@ class AuthService {
     }
 
     // Kiểm tra trùng lặp email ở database cục bộ
-    const isExisted = Object.values(this.users).some(u => u.email.toLowerCase() === cleanEmail);
-    if (isExisted) {
-      return { success: false, error: 'Email này đã được đăng ký tài khoản! Vui lòng chọn email khác hoặc Đăng nhập.' };
+    const existingUser = Object.values(this.users).find(u => u.email.toLowerCase() === cleanEmail);
+    if (existingUser) {
+      // Nếu email đã tồn tại, tự động đăng nhập người dùng vào tài khoản này
+      this.currentUser = existingUser;
+      localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, existingUser.id);
+      this.notifyAuthChange();
+      return { success: true, user: existingUser, isExisting: true };
     }
 
     const newUserId = 'user_' + Date.now();

@@ -168,35 +168,59 @@ class PaymentService {
       return { success: false, error: 'Dữ liệu đơn hàng không hợp lệ!' };
     }
 
-    // Đánh dấu đơn hàng là PAID
-    order.status = 'PAID';
-    order.paidAt = Date.now();
+    try {
+      // Đánh dấu đơn hàng là PAID
+      order.status = 'PAID';
+      order.paidAt = Date.now();
 
-    // Cập nhật lên Firestore
-    if (cloudSync.isConfigured && cloudSync.firestoreDb) {
+      // Cập nhật lên Firestore (dùng setDoc merge:true để không bao giờ bị lỗi document not found)
+      if (cloudSync.isConfigured && cloudSync.firestoreDb) {
+        try {
+          const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+          const orderRef = doc(cloudSync.firestoreDb, 'payment_orders', order.orderId);
+          await setDoc(orderRef, { status: 'PAID', paidAt: Date.now() }, { merge: true });
+        } catch (e) {
+          console.warn('Lỗi cập nhật Firestore:', e);
+        }
+      }
+
+      // Tạo tài khoản chính thức qua AuthService
+      const regResult = await auth.register({
+        name: order.userData.name,
+        email: order.userData.email,
+        password: order.userData.password,
+        avatar: order.userData.avatar
+      });
+
+      if (regResult.success) {
+        localStorage.removeItem(STORAGE_KEYS.PENDING_ORDER);
+        this.currentOrder = null;
+        return { success: true, user: regResult.user };
+      }
+
+      // Nếu register trả về lỗi, tự động fallback đăng nhập ngay
+      const loginRes = await auth.login(order.userData.email, order.userData.password);
+      if (loginRes.success) {
+        localStorage.removeItem(STORAGE_KEYS.PENDING_ORDER);
+        this.currentOrder = null;
+        return { success: true, user: loginRes.user };
+      }
+
+      return regResult;
+    } catch (err) {
+      console.error('Lỗi kích hoạt:', err);
+      // Fallback cuối cùng: Thử đăng nhập trực tiếp
       try {
-        const { doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-        const orderRef = doc(cloudSync.firestoreDb, 'payment_orders', order.orderId);
-        await updateDoc(orderRef, { status: 'PAID', paidAt: Date.now() });
+        const fbLogin = await auth.login(order.userData.email, order.userData.password);
+        if (fbLogin.success) {
+          localStorage.removeItem(STORAGE_KEYS.PENDING_ORDER);
+          this.currentOrder = null;
+          return { success: true, user: fbLogin.user };
+        }
       } catch (e) {}
+
+      return { success: false, error: err.message || 'Lỗi xử lý kích hoạt tài khoản.' };
     }
-
-    // Tạo tài khoản chính thức qua AuthService
-    const regResult = await auth.register({
-      name: order.userData.name,
-      email: order.userData.email,
-      password: order.userData.password,
-      avatar: order.userData.avatar
-    });
-
-    if (regResult.success) {
-      // Xoá đơn chờ sau khi đã kích hoạt
-      localStorage.removeItem(STORAGE_KEYS.PENDING_ORDER);
-      this.currentOrder = null;
-      return { success: true, user: regResult.user };
-    }
-
-    return regResult;
   }
 
   /**
