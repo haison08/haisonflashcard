@@ -12,9 +12,9 @@ const STORAGE_KEYS = {
 
 // Cấu hình tài khoản ngân hàng thụ hưởng mặc định
 const DEFAULT_PAYMENT_CONFIG = {
-  bankId: 'MB', // MBBank (Ngân hàng Quân Đội)
-  bankName: 'MBBank',
-  accountNo: '0868888888', // STK ngân hàng thụ hưởng (có thể tùy chỉnh)
+  bankId: 'TCB', // Techcombank (Ngân hàng TMCP Kỹ Thương Việt Nam)
+  bankName: 'Techcombank',
+  accountNo: '6888200808', // STK Techcombank của Nguyễn Phúc Hải Sơn
   accountName: 'NGUYEN PHUC HAI SON',
   amount: 20000, // 20.000 VNĐ
   sepayApiKey: '', // API Token từ SePay nếu dùng webhook tự động
@@ -33,7 +33,14 @@ class PaymentService {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PAYMENT_CONFIG);
       if (saved) {
-        this.config = { ...DEFAULT_PAYMENT_CONFIG, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        // Tự động nâng cấp nếu đang lưu STK cũ
+        if (parsed.accountNo === '0868888888') {
+          this.config = { ...DEFAULT_PAYMENT_CONFIG };
+          localStorage.setItem(STORAGE_KEYS.PAYMENT_CONFIG, JSON.stringify(this.config));
+        } else {
+          this.config = { ...DEFAULT_PAYMENT_CONFIG, ...parsed };
+        }
       }
     } catch (e) {
       console.error('Lỗi nạp payment_config:', e);

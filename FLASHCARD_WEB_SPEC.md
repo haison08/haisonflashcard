@@ -199,6 +199,13 @@
   - Khi người dùng mới mở trang web, hệ thống **không tự tạo tài khoản demo ngầm**, không tự động đăng nhập bất kỳ ai.
   - Người dùng ở trạng thái Khách (Guest), thanh Header hiển thị nút **"🔐 Đăng nhập / Đăng ký"**.
   - Muốn tạo tài khoản để lưu trữ dữ liệu cá nhân hóa và đồng bộ đa thiết bị, người dùng bắt buộc phải qua bước nạp tiền 20.000đ.
+- **Thông tin Tài khoản Ngân hàng Thụ Hưởng Mặc Định**:
+  - **Ngân hàng**: Techcombank (Ngân hàng TMCP Kỹ Thương Việt Nam - Mã `TCB`)
+  - **Số tài khoản (STK)**: `6888200808`
+  - **Chủ tài khoản**: `NGUYEN PHUC HAI SON` (Nguyễn Phúc Hải Sơn)
+  - **Số tiền thu phí**: `20.000 VNĐ`
+  - **Cú pháp chuyển khoản**: `LF` + 5 số ngẫu nhiên (Ví dụ: `LF12345`)
+
 - **Quy trình Thanh toán & Kích hoạt Tài khoản (VietQR Flow)**:
   1. **Bước 1 (Nhập thông tin)**: Người dùng nhập Họ tên, Email, Mật khẩu và chọn Avatar yêu thích trong Modal Đăng ký -> Bấm **"Tiếp tục kích hoạt (20.000đ)"**.
   2. **Bước 2 (Sinh mã VietQR động)**:
@@ -363,7 +370,7 @@ Trong quá trình rà soát và kiểm thử tự động, đã phát hiện và
 | :--- | :--- | :--- | :--- | :---: |
 | **TC-21** | Loại bỏ Tài khoản Demo ban đầu | Người dùng mới vào trang web ở trạng thái Khách (Guest), không có tài khoản demo tự tạo ngầm, Header hiển thị nút `👤 Đăng nhập` | Không tự tạo user_demo, currentUser = null | **100% ĐẠT** |
 | **TC-22** | Mở Modal Đăng ký có phí | Form Đăng ký hiển thị banner thông báo phí kích hoạt tài khoản vĩnh viễn: `20.000 VNĐ` kèm nút `Tiếp Tục Quét Mã VietQR (20.000đ) ⚡` | Hiển thị chuẩn xác, đẹp mắt | **100% ĐẠT** |
-| **TC-23** | Sinh Mã VietQR Động Chuẩn | Sinh mã đơn ngẫu nhiên dạng `LFxxxxx`, tạo ảnh VietQR với STK `0868888888`, Ngân hàng `MB`, số tiền `20.000 VNĐ` và nội dung CK | Link VietQR hợp lệ, render ảnh QR sắc nét | **100% ĐẠT** |
+| **TC-23** | Sinh Mã VietQR Động Chuẩn | Sinh mã đơn ngẫu nhiên dạng `LFxxxxx`, tạo ảnh VietQR với STK `6888200808`, Ngân hàng `Techcombank (TCB)`, số tiền `20.000 VNĐ` và nội dung CK | Link VietQR hợp lệ, render ảnh QR sắc nét | **100% ĐẠT** |
 | **TC-24** | Tiện ích Sao chép 1-Click | Nút "Sao chép" cho STK, Số tiền và "Sao chép mã" cho cú pháp chuyển khoản phản hồi tích tắc "✓ Đã chép!" | Copy vào Clipboard mượt mà | **100% ĐẠT** |
 | **TC-25** | Đếm ngược & Radar Polling | Đồng hồ đếm ngược 10:00 hoạt động, radar chấm xanh nhấp nháy thăm dò trạng thái đơn mỗi 2.5s | Hoạt động trơn tru | **100% ĐẠT** |
 | **TC-26** | Xác nhận Kích hoạt Tức thì | Nút kích hoạt mô phỏng Admin cập nhật trạng thái đơn thành `PAID`, tạo user chính thức, bắn pháo hoa confetti và tự động đăng nhập | Kích hoạt thành công, lưu Cloud Firestore | **100% ĐẠT** |

@@ -451,9 +451,9 @@ class App {
      const cfg = payment.getConfig();
 
      const banks = [
-       { id: 'MBBank', name: 'MBBank (Quân Đội)' },
+       { id: 'MB', name: 'MBBank (Quân Đội)' },
        { id: 'Vietcombank', name: 'Vietcombank (VCB)' },
-       { id: 'Techcombank', name: 'Techcombank (TCB)' },
+       { id: 'TCB', name: 'Techcombank (TCB)' },
        { id: 'VPBank', name: 'VPBank' },
        { id: 'ACB', name: 'ACB (Á Châu)' },
        { id: 'BIDV', name: 'BIDV' },
@@ -491,7 +491,7 @@ class App {
 
              <div class="form-group" style="margin-bottom: 0.85rem;">
                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Số Tài Khoản (STK):</label>
-               <input type="text" class="form-input" id="pay-cfg-account-no" value="${this.escapeHtml(cfg.accountNo || '')}" placeholder="VD: 0868888888" style="font-family: var(--font-mono); font-weight: 600;">
+               <input type="text" class="form-input" id="pay-cfg-account-no" value="${this.escapeHtml(cfg.accountNo || '')}" placeholder="VD: 6888200808" style="font-family: var(--font-mono); font-weight: 600;">
              </div>
 
              <div class="form-group" style="margin-bottom: 0.85rem;">
