@@ -17,7 +17,7 @@ const DEFAULT_PAYMENT_CONFIG = {
   accountNo: '106880869088', // STK VietinBank của Nguyen Phuc Hai Son
   accountName: 'NGUYEN PHUC HAI SON',
   amount: 20000, // 20.000 VNĐ
-  sepayApiKey: '', // API Token từ SePay nếu dùng webhook tự động
+  sepayApiKey: 'spsk_live_BiGP3Z6Ku4xftbPnlbafP3db3BBjPmbU', // API Secret Key từ SePay
   template: 'compact2' // Giao diện VietQR sắc nét
 };
 
