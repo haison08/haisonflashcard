@@ -474,36 +474,23 @@ class AuthModal {
       }
     }, 1000);
 
-    // Hàm xử lý kích hoạt tài khoản khi thanh toán thành công
+    // Hàm xử lý kích hoạt tài khoản khi thanh toán thành công: Ra thẳng giao diện chính
     const handleSuccess = async (res) => {
       this.clearTimers();
+      
+      // Đóng modal thanh toán ngay lập tức
+      closeModal();
+
+      // Đăng nhập và mở khóa ra thẳng giao diện chính của ứng dụng
+      if (window.app) {
+        window.app.onUserLoggedIn(res.user);
+        window.app.showToast(`🎉 Thanh toán 20.000đ thành công! Chào mừng ${res.user.name} đến với LinguaFlash!`, 'success');
+      }
+
+      // Phát âm thanh chiến thắng & bắn pháo hoa ăn mừng trên giao diện chính
       audio.playVictoryFanfare();
       if (window.cardViewer && window.cardViewer.fireConfetti) {
         window.cardViewer.fireConfetti();
-      }
-
-      const bodyEl = document.getElementById('payment-modal-body');
-      if (bodyEl) {
-        bodyEl.innerHTML = `
-          <div style="padding: 2.5rem 1rem; text-align: center;">
-            <div style="font-size: 4rem; animation: bounce 0.6s ease infinite alternate;">🎉</div>
-            <h2 style="color: #10b981; font-size: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
-              Thanh Toán Thành Công!
-            </h2>
-            <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.75rem;">
-              Hệ thống đã nhận <strong>20.000 VNĐ</strong> với mã <strong>${order.orderId}</strong>.<br />
-              Tài khoản <strong>${this.escapeHtml(order.userData.name)}</strong> đã được kích hoạt vĩnh viễn trên toàn hệ thống!
-            </p>
-            <button class="btn btn-primary btn-lg" id="btn-start-studying-now" style="min-width: 200px;">
-              🚀 Bắt Đầu Học Ngay
-            </button>
-          </div>
-        `;
-
-        document.getElementById('btn-start-studying-now')?.addEventListener('click', () => {
-          closeModal();
-          if (window.app) window.app.onUserLoggedIn(res.user);
-        });
       }
     };
 

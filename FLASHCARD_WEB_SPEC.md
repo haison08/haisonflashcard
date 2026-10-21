@@ -216,8 +216,9 @@
   3. **Bước 3 (Xác nhận chuyển tiền thành công)**:
      - Hệ thống lắng nghe biến động trạng thái đơn hàng thời gian thực qua Webhook `/api/payment-webhook` hoặc dịch vụ cổng ngân hàng (SePay/PayOS) / Firestore Listener.
      - Hỗ trợ nút **"Kiểm tra giao dịch ngay"** và cơ chế kích hoạt tức thì cho Admin kiểm thử.
-  4. **Bước 4 (Cấp tài khoản & Tự động Đăng nhập)**:
-     - Khi nhận được tín hiệu `PAID`, pop-up chuyển sang trạng thái thành công màu xanh lá rực rỡ, phát âm thanh chiến thắng, bắn pháo hoa confetti.
+  4. **Bước 4 (Cấp tài khoản & Chuyển thẳng ra giao diện chính)**:
+     - Khi nhận được tín hiệu `PAID`, hệ thống lập tức đóng modal thanh toán, mở khóa Paywall và chuyển thẳng người dùng ra màn hình học tập chính của ứng dụng.
+     - Hiển thị Toast Notification xanh lá chào mừng, phát âm thanh chiến thắng `audio.playVictoryFanfare()` và bắn pháo hoa confetti ăn mừng rực rỡ, không bắt người dùng phải bấm thêm bất kỳ nút trung gian nào.
      - Tạo tài khoản chính thức vào database, phân bổ kho 5 bộ từ vựng cá nhân, lưu lên Cloud Firestore và tự động đăng nhập người dùng.
 
 ### 4.13. Cơ chế Khóa Chặt Truy Cập Khi Chưa Đăng Nhập (Strict Auth Guard & Paywall)
