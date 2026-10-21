@@ -606,11 +606,16 @@ class AuthModal {
 
             <!-- Account Switcher Section -->
             <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
                 <div style="font-weight: 700; font-size: 0.95rem;">Tài Khoản Trên Thiết Bị Này</div>
-                <button class="btn btn-ghost btn-sm" id="btn-open-another-account" style="color: var(--color-primary); padding: 2px 6px;">
-                  + Thêm tài khoản
-                </button>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <button class="btn btn-ghost btn-sm" id="btn-wipe-all-accounts" style="color: #ef4444; font-size: 0.8rem; padding: 2px 6px;">
+                    🗑️ Xoá tất cả
+                  </button>
+                  <button class="btn btn-ghost btn-sm" id="btn-open-another-account" style="color: var(--color-primary); padding: 2px 6px;">
+                    + Thêm tài khoản
+                  </button>
+                </div>
               </div>
 
               <div class="accounts-list">
@@ -637,10 +642,15 @@ class AuthModal {
 
           </div>
 
-          <div class="modal-footer" style="justify-content: space-between;">
-            <button class="btn btn-danger btn-sm" id="btn-user-logout">
-              🚪 Đăng xuất
-            </button>
+          <div class="modal-footer" style="justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-danger btn-sm" id="btn-user-logout">
+                🚪 Đăng xuất
+              </button>
+              <button class="btn btn-danger btn-sm" id="btn-wipe-all-local" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">
+                🗑️ Xoá hết tài khoản máy này
+              </button>
+            </div>
             <button class="btn btn-secondary btn-sm" id="btn-close-profile">
               Đóng
             </button>
@@ -655,6 +665,15 @@ class AuthModal {
 
     document.getElementById('profile-modal-close')?.addEventListener('click', closeModal);
     document.getElementById('btn-close-profile')?.addEventListener('click', closeModal);
+
+    // Xoá sạch tài khoản trên máy này
+    const handleWipeAccounts = () => {
+      if (confirm('⚠️ Bạn có chắc chắn muốn xoá sạch toàn bộ tài khoản và dữ liệu đã lưu trên trình duyệt máy này không?')) {
+        auth.wipeAllLocalAccounts();
+      }
+    };
+    document.getElementById('btn-wipe-all-accounts')?.addEventListener('click', handleWipeAccounts);
+    document.getElementById('btn-wipe-all-local')?.addEventListener('click', handleWipeAccounts);
 
     // Đăng xuất
     document.getElementById('btn-user-logout')?.addEventListener('click', () => {

@@ -28,6 +28,18 @@ class AuthService {
   }
 
   init() {
+    // Tự động dọn sạch 100% toàn bộ tài khoản test cũ trên trình duyệt theo yêu cầu
+    try {
+      const WIPE_FLAG = 'linguaflash_wipe_v42';
+      if (!localStorage.getItem(WIPE_FLAG)) {
+        localStorage.clear();
+        localStorage.setItem(WIPE_FLAG, 'true');
+        this.users = {};
+        this.currentUser = null;
+        return;
+      }
+    } catch (e) {}
+
     // Đọc danh sách người dùng
     try {
       const data = localStorage.getItem(STORAGE_KEYS.USERS_DB);
@@ -235,6 +247,22 @@ class AuthService {
       streak: u.streak ? u.streak.current : 0,
       cardsCount: (u.decks || []).reduce((acc, d) => acc + (d.cards ? d.cards.length : 0), 0)
     }));
+  }
+
+  /**
+   * Xoá sạch toàn bộ tài khoản và dữ liệu lưu trên thiết bị này
+   */
+  wipeAllLocalAccounts() {
+    try {
+      localStorage.clear();
+      localStorage.setItem('linguaflash_wipe_v42', 'true');
+      this.users = {};
+      this.currentUser = null;
+      this.notifyAuthChange();
+      window.location.reload();
+    } catch (e) {
+      console.error('Lỗi khi xoá tài khoản trên máy:', e);
+    }
   }
 }
 
