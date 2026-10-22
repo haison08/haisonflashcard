@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     return res.status(200).json({
       status: 'active',
-      service: 'LinguaFlash VietQR Webhook Listener',
+      service: 'HaiSonFlash VietQR Webhook Listener',
       timestamp: Date.now()
     });
   }

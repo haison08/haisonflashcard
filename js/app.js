@@ -174,7 +174,7 @@ class App {
             <span>🔒</span> Yêu Cầu Tài Khoản Để Học Tập
           </div>
           <h2 class="guest-lock-title">
-            Chào Mừng Bạn Đến Với LinguaFlash!
+            Chào Mừng Bạn Đến Với HaiSonFlash!
           </h2>
           <p class="guest-lock-desc">
             Hệ thống yêu cầu <strong>kích hoạt tài khoản (20.000 VNĐ)</strong> để bảo vệ lộ trình học, cá nhân hóa bộ từ vựng, tính toán chu kỳ lặp lại ngắt quãng (SRS Leitner) và đồng bộ xuyên suốt mọi thiết bị.
@@ -532,6 +532,7 @@ class App {
     document.getElementById('btn-cloud-cancel')?.addEventListener('click', closeModal);
 
     document.getElementById('btn-cloud-disconnect')?.addEventListener('click', () => {
+      localStorage.removeItem('haisonflash_firebase_config');
       localStorage.removeItem('linguaflash_firebase_config');
       cloudSync.config = null;
       cloudSync.isConfigured = false;

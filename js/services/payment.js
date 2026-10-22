@@ -6,8 +6,8 @@ import { cloudSync } from './cloudSync.js';
 import { auth } from './auth.js';
 
 const STORAGE_KEYS = {
-  PAYMENT_CONFIG: 'linguaflash_payment_config',
-  PENDING_ORDER: 'linguaflash_pending_order'
+  PAYMENT_CONFIG: 'haisonflash_payment_config',
+  PENDING_ORDER: 'haisonflash_pending_order'
 };
 
 // Cấu hình tài khoản ngân hàng thụ hưởng mặc định
@@ -31,7 +31,7 @@ class PaymentService {
 
   init() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PAYMENT_CONFIG);
+      const saved = localStorage.getItem(STORAGE_KEYS.PAYMENT_CONFIG) || localStorage.getItem('linguaflash_payment_config');
       if (saved) {
         const parsed = JSON.parse(saved);
         // Tự động nâng cấp nếu đang lưu STK cũ Techcombank hoặc demo
@@ -149,7 +149,7 @@ class PaymentService {
 
     // 2. Kiểm tra bộ nhớ cục bộ
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PENDING_ORDER);
+      const saved = localStorage.getItem(STORAGE_KEYS.PENDING_ORDER) || localStorage.getItem('linguaflash_pending_order');
       if (saved) {
         const localOrder = JSON.parse(saved);
         if (localOrder.orderId === orderCode && localOrder.status === 'PAID') {

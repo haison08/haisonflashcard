@@ -248,7 +248,7 @@ class StatsView {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `linguaflash_backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `haisonflash_backup_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
       audio.playSuccess();

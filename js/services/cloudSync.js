@@ -14,8 +14,8 @@ export const DEFAULT_FIREBASE_CONFIG = {
 };
 
 const STORAGE_KEYS = {
-  FIREBASE_CONFIG: 'linguaflash_firebase_config',
-  CLOUD_MODE: 'linguaflash_cloud_mode'
+  FIREBASE_CONFIG: 'haisonflash_firebase_config',
+  CLOUD_MODE: 'haisonflash_cloud_mode'
 };
 
 class CloudSyncService {
@@ -28,7 +28,7 @@ class CloudSyncService {
 
   loadConfig() {
     try {
-      const savedConfig = localStorage.getItem(STORAGE_KEYS.FIREBASE_CONFIG);
+      const savedConfig = localStorage.getItem(STORAGE_KEYS.FIREBASE_CONFIG) || localStorage.getItem('linguaflash_firebase_config');
       if (savedConfig) {
         this.config = JSON.parse(savedConfig);
       } else {

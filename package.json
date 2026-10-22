@@ -1,7 +1,7 @@
 {
   "name": "haisonflashcard",
   "version": "1.0.0",
-  "description": "LinguaFlash - Modern English Flashcard Web App with 3D flip card, Spaced Repetition (SRS), and multi-device account sync",
+  "description": "HaiSonFlash - Modern English Flashcard Web App with 3D flip card, Spaced Repetition (SRS), and multi-device account sync",
   "scripts": {
     "start": "python3 -m http.server 8888"
   },

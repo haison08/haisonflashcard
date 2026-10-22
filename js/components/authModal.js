@@ -35,7 +35,7 @@ class AuthModal {
       <div class="modal-overlay active" id="auth-modal-overlay">
         <div class="modal-box" style="max-width: 480px;">
           <div class="modal-header">
-            <h3 class="modal-title">Tài Khoản LinguaFlash</h3>
+            <h3 class="modal-title">Tài Khoản HaiSonFlash</h3>
             <button class="modal-close" id="auth-modal-close">&times;</button>
           </div>
 
@@ -484,7 +484,7 @@ class AuthModal {
       // Đăng nhập và mở khóa ra thẳng giao diện chính của ứng dụng
       if (window.app) {
         window.app.onUserLoggedIn(res.user);
-        window.app.showToast(`🎉 Thanh toán 20.000đ thành công! Chào mừng ${res.user.name} đến với LinguaFlash!`, 'success');
+        window.app.showToast(`🎉 Thanh toán 20.000đ thành công! Chào mừng ${res.user.name} đến với HaiSonFlash!`, 'success');
       }
 
       // Phát âm thanh chiến thắng & bắn pháo hoa ăn mừng trên giao diện chính

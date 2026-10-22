@@ -1,11 +1,11 @@
 # TÀI LIỆU THIẾT KẾ & ĐẶC TẢ KỸ THUẬT: ỨNG DỤNG WEB FLASHCARD HỌC TIẾNG ANH
-*(LinguaFlash - Modern English Learning Flashcard Application)*
+*(HaiSonFlash - Modern English Learning Flashcard Application)*
 
 ---
 
 ## 1. TỔNG QUAN DỰ ÁN (PROJECT OVERVIEW)
 
-- **Tên dự án**: **LinguaFlash** (hoặc **WordCraft**)
+- **Tên dự án**: **HaiSonFlash** (hoặc **WordCraft**)
 - **Mục tiêu**: Xây dựng một ứng dụng web flashcard học tiếng Anh hiện đại, trực quan, thẩm mỹ cao (wow effect), hỗ trợ phát âm chuẩn bản ngữ (US/UK), tích hợp thuật toán học ngắt quãng Spaced Repetition (SRS), đa dạng chế độ học và trò chơi ôn tập, sẵn sàng sử dụng ngay với kho từ vựng phong phú.
 - **Đối tượng người dùng**: Người học tiếng Anh ở mọi trình độ (Giao tiếp, IELTS, TOEIC, từ vựng học thuật, idioms).
 - **Trải nghiệm cốt lõi**:
@@ -143,7 +143,7 @@
   - Tự động duy trì phiên làm việc (`active_session`) để người dùng không phải đăng nhập lại mỗi khi mở lại trình duyệt.
   - Hỗ trợ tài khoản mẫu (Demo Account) để trải nghiệm nhanh bằng 1 click.
 - **Phân tách Dữ liệu Độc lập Tuyệt đối (Strict Data Isolation)**:
-  - Toàn bộ dữ liệu của mỗi tài khoản được lưu giữ độc lập trong cơ sở dữ liệu `linguaflash_users_db`:
+  - Toàn bộ dữ liệu của mỗi tài khoản được lưu giữ độc lập trong cơ sở dữ liệu `haisonflash_users_db`:
     - Danh sách bộ từ và thẻ từ vựng (kể cả từ tự tạo, chỉnh sửa hay xoá).
     - Lịch sử hoạt động học tập (Study Logs: ngày giờ học, số thẻ ôn, chế độ học, độ chính xác).
     - Chuỗi ngày học liên tục (`streak`: ngày hiện tại, kỷ lục chuỗi dài nhất, ngày học gần nhất).
@@ -466,7 +466,7 @@ Trong quá trình rà soát và kiểm thử tự động, đã phát hiện và
 
 ---
 
-*Tài liệu này là kim chỉ nam để thực hiện toàn bộ ứng dụng web flashcard học tiếng Anh LinguaFlash.*
+*Tài liệu này là kim chỉ nam để thực hiện toàn bộ ứng dụng web flashcard học tiếng Anh HaiSonFlash.*
 
 
 

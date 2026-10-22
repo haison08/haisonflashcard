@@ -6,8 +6,8 @@ import { DEFAULT_DECKS } from '../data/defaultDecks.js';
 import { cloudSync } from './cloudSync.js';
 
 const STORAGE_KEYS = {
-  USERS_DB: 'linguaflash_users_db',
-  CURRENT_SESSION: 'linguaflash_current_session'
+  USERS_DB: 'haisonflash_users_db',
+  CURRENT_SESSION: 'haisonflash_current_session'
 };
 
 
@@ -30,19 +30,27 @@ class AuthService {
   init() {
     // Tự động dọn sạch 100% toàn bộ tài khoản test cũ trên trình duyệt theo yêu cầu
     try {
-      const WIPE_FLAG = 'linguaflash_wipe_v42';
-      if (!localStorage.getItem(WIPE_FLAG)) {
+      const WIPE_FLAG = 'haisonflash_wipe_v42';
+      if (!localStorage.getItem(WIPE_FLAG) && !localStorage.getItem('linguaflash_wipe_v42')) {
         localStorage.clear();
         localStorage.setItem(WIPE_FLAG, 'true');
         this.users = {};
         this.currentUser = null;
         return;
+      } else {
+        localStorage.setItem(WIPE_FLAG, 'true');
       }
     } catch (e) {}
 
     // Đọc danh sách người dùng
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.USERS_DB);
+      let data = localStorage.getItem(STORAGE_KEYS.USERS_DB);
+      if (!data) {
+        data = localStorage.getItem('linguaflash_users_db');
+        if (data) {
+          localStorage.setItem(STORAGE_KEYS.USERS_DB, data);
+        }
+      }
       if (data) {
         this.users = JSON.parse(data);
       }
@@ -53,9 +61,12 @@ class AuthService {
 
     // Khôi phục phiên làm việc (Session) nếu người dùng đã đăng nhập hợp lệ từ trước
     try {
-      const sessionUserId = localStorage.getItem(STORAGE_KEYS.CURRENT_SESSION);
+      const sessionUserId = localStorage.getItem(STORAGE_KEYS.CURRENT_SESSION) || localStorage.getItem('linguaflash_current_session');
       if (sessionUserId && this.users[sessionUserId]) {
         this.currentUser = this.users[sessionUserId];
+        if (!localStorage.getItem(STORAGE_KEYS.CURRENT_SESSION)) {
+          localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, sessionUserId);
+        }
       } else {
         this.currentUser = null;
       }
@@ -255,7 +266,7 @@ class AuthService {
   wipeAllLocalAccounts() {
     try {
       localStorage.clear();
-      localStorage.setItem('linguaflash_wipe_v42', 'true');
+      localStorage.setItem('haisonflash_wipe_v42', 'true');
       this.users = {};
       this.currentUser = null;
       this.notifyAuthChange();
